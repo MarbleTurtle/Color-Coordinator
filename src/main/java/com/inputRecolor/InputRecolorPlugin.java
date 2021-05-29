@@ -1,6 +1,5 @@
 package com.inputRecolor;
 
-import com.google.inject.Provides;
 import javax.inject.Inject;
 
 import lombok.extern.slf4j.Slf4j;
@@ -57,6 +56,12 @@ public class InputRecolorPlugin extends Plugin
 		Widget chat = client.getWidget(WidgetInfo.CHATBOX_INPUT);
 		if (chat == null)
 			return;
+		if (chat.getText().equals(client.getLocalPlayer().getName()+": Press Enter to Chat...")||
+		chat.getText().equals("Friends Chat: Press Enter to Chat...")||
+		chat.getText().equals("Clan Chat: Press Enter to Chat...")||
+		chat.getText().equals("Guest Clan Chat: Press Enter to Chat...")){
+			return;
+		}
 		String name = chat.getText().contains(":") ? chat.getText().split(":")[0] + ":" : client.getLocalPlayer().getName() + ":";
 		String text = client.getVar(VarClientStr.CHATBOX_TYPED_TEXT);
 		switch (text){
