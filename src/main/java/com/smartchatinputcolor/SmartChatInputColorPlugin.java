@@ -3,6 +3,7 @@ package com.smartchatinputcolor;
 import java.util.Arrays;
 import javax.inject.Inject;
 
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.ScriptID;
@@ -19,29 +20,7 @@ import net.runelite.client.plugins.PluginDescriptor;
 
 import java.awt.*;
 import net.runelite.client.util.ColorUtil;
-
-enum ChatChannel
-{
-	PUBLIC("PublicChat", 3000, 2992, 0x9090FF, 0x0000FF),
-	FRIEND("ClanChatMessage", 3004, 2996, 0xEF5050, 0x7F0000),
-	CLAN("ClanMessage", 3005, 2997, 0x7F0000, 0x7F0000),
-	GUEST("ClanGuestMessage", 3061, 3060, 0x7F0000, 0x7F0000);
-
-	final String colorConfigKey;
-	final int transparentVarPId;
-	final int opaqueVarPId;
-	final int transparentDefaultRgb;
-	final int opaqueDefaultRgb;
-
-	ChatChannel(String colorConfigKey, int transparentVarPId, int opaqueVarPId, int transparentDefaultRgb, int opaqueDefaultRgb)
-	{
-		this.colorConfigKey = colorConfigKey;
-		this.transparentVarPId = transparentVarPId;
-		this.opaqueVarPId = opaqueVarPId;
-		this.transparentDefaultRgb = transparentDefaultRgb;
-		this.opaqueDefaultRgb = opaqueDefaultRgb;
-	}
-}
+import net.runelite.client.util.Text;
 
 @Slf4j
 @PluginDescriptor(
@@ -54,6 +33,21 @@ public class SmartChatInputColorPlugin extends Plugin
 
 	@Inject
 	private ConfigManager configManager;
+
+	@AllArgsConstructor
+	enum ChatChannel
+	{
+		PUBLIC("PublicChat", 3000, 2992, 0x9090FF, 0x0000FF),
+		FRIEND("ClanChatMessage", 3004, 2996, 0xEF5050, 0x7F0000),
+		CLAN("ClanMessage", 3005, 2997, 0x7F0000, 0x7F0000),
+		GUEST("ClanGuestMessage", 3061, 3060, 0x7F0000, 0x7F0000);
+
+		private final String colorConfigKey;
+		private final int transparentVarPId;
+		private final int opaqueVarPId;
+		private final int transparentDefaultRgb;
+		private final int opaqueDefaultRgb;
+	}
 
 	private ChatChannel selectedChat = ChatChannel.PUBLIC;
 
@@ -89,18 +83,26 @@ public class SmartChatInputColorPlugin extends Plugin
 
 		String input = inputWidget.getText();
 
-		if (input.equals(client.getLocalPlayer().getName() + ": Press Enter to Chat...") ||
-			input.equals("Friends Chat: Press Enter to Chat...") ||
-			input.equals("Clan Chat: Press Enter to Chat...") ||
-			input.equals("Guest Clan Chat: Press Enter to Chat..."))
+		try
 		{
-			return;
-		}
+			String playerName = client.getLocalPlayer().getName();
+			if (input.equals(playerName + ": Press Enter to Chat...") ||
+				input.equals("Friends Chat: Press Enter to Chat...") ||
+				input.equals("Clan Chat: Press Enter to Chat...") ||
+				input.equals("Guest Clan Chat: Press Enter to Chat..."))
+			{
+				return;
+			}
 
-		String name = input.contains(":") ? input.split(":")[0] + ":" : client.getLocalPlayer().getName() + ":";
-		String text = client.getVar(VarClientStr.CHATBOX_TYPED_TEXT);
-		Color color = computeChannelColor(deriveChatChannel(name, text));
-		inputWidget.setText(name + " " + ColorUtil.wrapWithColorTag(text + "*", color));
+			String name = input.contains(":") ? input.split(":")[0] + ":" : playerName + ":";
+			String text = client.getVar(VarClientStr.CHATBOX_TYPED_TEXT);
+			Color color = computeChannelColor(deriveChatChannel(name, text));
+			inputWidget.setText(name + " " + ColorUtil.wrapWithColorTag(Text.escapeJagex(text) + "*", color));
+		}
+		catch (NullPointerException ignored)
+		{
+			log.debug("Player name cannot be retrieved (NullPointerException)");
+		}
 	}
 
 	/**
