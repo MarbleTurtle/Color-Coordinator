@@ -37,20 +37,16 @@ enum ChatChannel
 	final String colorConfigKey;
 	final int transparentVarPId;
 	final int opaqueVarPId;
-	final int transparentFallbackRgb;
-	final int opaqueFallbackRgb;
+	final int transparentDefaultRgb;
+	final int opaqueDefaultRgb;
 
-	ChatChannel(String colorConfigKey,
-				int transparentVarPlayerId,
-				int opaqueVarPlayerId,
-				int transparentFallbackColor,
-				int opaqueFallbackColor)
+	ChatChannel(String colorConfigKey, int transparentVarPId, int opaqueVarPId, int transparentDefaultRgb, int opaqueDefaultRgb)
 	{
 		this.colorConfigKey = colorConfigKey;
-		this.transparentVarPId = transparentVarPlayerId;
-		this.opaqueVarPId = opaqueVarPlayerId;
-		this.transparentFallbackRgb = transparentFallbackColor;
-		this.opaqueFallbackRgb = opaqueFallbackColor;
+		this.transparentVarPId = transparentVarPId;
+		this.opaqueVarPId = opaqueVarPId;
+		this.transparentDefaultRgb = transparentDefaultRgb;
+		this.opaqueDefaultRgb = opaqueDefaultRgb;
 	}
 }
 
@@ -66,7 +62,7 @@ public class SmartChatInputColorPlugin extends Plugin
 	@Inject
 	private ConfigManager configManager;
 
-	private ChatPanel selectedChat = ChatPanel.PUBLIC;
+	private ChatChannel selectedChat = ChatChannel.PUBLIC;
 
 	@Override
 	protected void startUp() throws Exception
@@ -92,34 +88,37 @@ public class SmartChatInputColorPlugin extends Plugin
 		{
 			return;
 		}
-		Widget chat = client.getWidget(WidgetInfo.CHATBOX_INPUT);
-		if (chat == null)
-		{
-			return;
-		}
-		if (chat.getText().equals(client.getLocalPlayer().getName() + ": Press Enter to Chat...") ||
-			chat.getText().equals("Friends Chat: Press Enter to Chat...") ||
-			chat.getText().equals("Clan Chat: Press Enter to Chat...") ||
-			chat.getText().equals("Guest Clan Chat: Press Enter to Chat..."))
+		Widget inputWidget = client.getWidget(WidgetInfo.CHATBOX_INPUT);
+		if (inputWidget == null)
 		{
 			return;
 		}
 
-		String name = chat.getText().contains(":") ? chat.getText().split(":")[0] + ":" : client.getLocalPlayer().getName() + ":";
+		String input = inputWidget.getText();
+
+		if (input.equals(client.getLocalPlayer().getName() + ": Press Enter to Chat...") ||
+			input.equals("Friends Chat: Press Enter to Chat...") ||
+			input.equals("Clan Chat: Press Enter to Chat...") ||
+			input.equals("Guest Clan Chat: Press Enter to Chat..."))
+		{
+			return;
+		}
+
+		String name = input.contains(":") ? input.split(":")[0] + ":" : client.getLocalPlayer().getName() + ":";
 		String text = client.getVar(VarClientStr.CHATBOX_TYPED_TEXT);
-
-		chat.setText(name + " " + ColorUtil.wrapWithColorTag(text + "*", getChatColor(text ,name)));
+		Color color = computeChannelColor(deriveChatChannel(name, text));
+		inputWidget.setText(name + " " + ColorUtil.wrapWithColorTag(text + "*", color));
 	}
 
 	/**
 	 * Decide which channel color the input text should get
-	 * TODO: Check whether player is a clan member and guest
+	 * TODO: Check whether player is a clan member and / or guest
 	 *
-	 * @param text Input text typed by the player
-	 * @param name Input prefix (player name, or active chat mode)
-	 * @return Chat channel that the input text should be colored as
+	 * @param name Chat prefix (player name, or active chat mode)
+	 * @param text Chat input text typed by the player
+	 * @return Chat channel whose color the input text should be recolored to
 	 */
-	private ChatChannel deriveChatChannel(String text, String name)
+	private ChatChannel deriveChatChannel(String name, String text)
 	{
 		// First check if the text is exactly one of the prefixes
 		switch (text)
@@ -132,51 +131,39 @@ public class SmartChatInputColorPlugin extends Plugin
 				return ChatChannel.CLAN;
 			case "/g":
 				return ChatChannel.GUEST;
-			default:
-				boolean inFriendsChat = client.getFriendsChatManager() != null;
-				// If not a prefix, check if in a certain chat mode
-				switch (name)
-				{
-					case "Friends Chat:":
-						return inFriendsChat ? ChatChannel.FRIEND : ChatChannel.PUBLIC;
-					case "Clan Chat:":
-						return ChatChannel.CLAN;
-					case "Guest Clan Chat:":
-						return ChatChannel.GUEST;
-					default:
-						// If not in a chat mode, check if the typed texts starts with one of the prefixes
-						if (text.startsWith("///") || (text.startsWith("/g ") || text.matches("/g")))
-						{
-							return ChatChannel.GUEST;
-						}
-						else if (text.startsWith("//") || (text.startsWith("/c ") || text.matches("/c")))
-						{
-							return ChatChannel.CLAN;
-						}
-						else if (text.startsWith("/") && inFriendsChat)
-						{
-							return ChatChannel.FRIEND;
-						}
-						else
-						{
-							// Finally, if the text contains no indicators, choose color based on active chat
-							switch (selectedChat)
-							{
-								case CLAN:
-									return ChatChannel.CLAN;
-								case FRIEND:
-									return inFriendsChat ? ChatChannel.FRIEND : ChatChannel.PUBLIC;
-								default:
-									return ChatChannel.PUBLIC;
-							}
-						}
-				}
 		}
+
+		// If not a prefix, check if in a certain chat mode
+		switch (name)
+		{
+			case "Friends Chat:":
+				return client.getFriendsChatManager() != null ? ChatChannel.FRIEND : ChatChannel.PUBLIC;
+			case "Clan Chat:":
+				return ChatChannel.CLAN;
+			case "Guest Clan Chat:":
+				return ChatChannel.GUEST;
+		}
+
+		// If not in a chat mode, check if the typed texts starts with one of the prefixes
+		if (text.startsWith("///") || (text.startsWith("/g ") || text.matches("/g")))
+		{
+			return ChatChannel.GUEST;
+		}
+		if (text.startsWith("//") || (text.startsWith("/c ") || text.matches("/c")))
+		{
+			return ChatChannel.CLAN;
+		}
+		if (text.startsWith("/") && client.getFriendsChatManager() != null)
+		{
+			return ChatChannel.FRIEND;
+		}
+
+		// If the text contains no indicators, the message will be sent to the open chat tab
+		return selectedChat;
 	}
 
-	private Color getChatColor(String text, String name)
+	private Color computeChannelColor(ChatChannel channel)
 	{
-		ChatChannel channel = deriveChatChannel(text, name);
 		boolean transparent = client.isResized() && client.getVar(Varbits.TRANSPARENT_CHATBOX) == 1;
 
 		Color color = configManager.getConfiguration(
@@ -194,14 +181,12 @@ public class SmartChatInputColorPlugin extends Plugin
 		{
 			return Color.BLACK;
 		}
-		else if (colorCode == -1)
+		if (colorCode == -1)
 		{
-			return new Color(transparent ? channel.transparentFallbackRgb : channel.opaqueFallbackRgb);
+			return new Color(transparent ? channel.transparentDefaultRgb : channel.opaqueDefaultRgb);
 		}
-		else
-		{
-			return new Color(colorCode);
-		}
+
+		return new Color(colorCode);
 	}
 
 	/**
@@ -220,13 +205,13 @@ public class SmartChatInputColorPlugin extends Plugin
 		switch (clicked.getId())
 		{
 			case 10616855:
-				selectedChat = ChatPanel.CLAN;
+				selectedChat = ChatChannel.CLAN;
 				break;
 			case 10616851:
-				selectedChat = ChatPanel.FRIEND;
+				selectedChat = client.getFriendsChatManager() != null ? ChatChannel.FRIEND : ChatChannel.PUBLIC;
 				break;
 			default:
-				selectedChat = ChatPanel.PUBLIC;
+				selectedChat = ChatChannel.PUBLIC;
 				break;
 		}
 	}
