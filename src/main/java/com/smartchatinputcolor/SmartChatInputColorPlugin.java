@@ -20,13 +20,6 @@ import net.runelite.client.plugins.PluginDescriptor;
 import java.awt.*;
 import net.runelite.client.util.ColorUtil;
 
-enum ChatPanel
-{
-	PUBLIC,
-	FRIEND,
-	CLAN,
-}
-
 enum ChatChannel
 {
 	PUBLIC("PublicChat", 3000, 2992, 0x9090FF, 0x0000FF),
