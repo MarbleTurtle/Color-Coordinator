@@ -1,2 +1,2 @@
-# Input Recolor
-Recolors the text field to reflect what chat the message should be sent to.
+# Smart Chat Input Color
+Recolors the text in the chat input to reflect which channel the message will be sent to.
