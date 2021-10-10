@@ -54,13 +54,13 @@ public class SmartChatInputColorPlugin extends Plugin
 	@Override
 	protected void startUp() throws Exception
 	{
-		log.info("Input Recolorer started!");
+		log.debug("Input Recolorer started!");
 	}
 
 	@Override
 	protected void shutDown() throws Exception
 	{
-		log.info("Input Recolorer stopped!");
+		log.debug("Input Recolorer stopped!");
 	}
 
 	/**
