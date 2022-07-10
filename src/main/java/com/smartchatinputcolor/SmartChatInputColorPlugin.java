@@ -95,7 +95,7 @@ public class SmartChatInputColorPlugin extends Plugin
 			}
 
 			String name = input.contains(":") ? input.split(":")[0] + ":" : playerName + ":";
-			String text = client.getVar(VarClientStr.CHATBOX_TYPED_TEXT);
+			String text = client.getVarcStrValue(VarClientStr.CHATBOX_TYPED_TEXT);
 			Color color = computeChannelColor(deriveChatChannel(name, text));
 			inputWidget.setText(name + " " + ColorUtil.wrapWithColorTag(Text.escapeJagex(text) + "*", color));
 		}
@@ -159,7 +159,7 @@ public class SmartChatInputColorPlugin extends Plugin
 
 	private Color computeChannelColor(ChatChannel channel)
 	{
-		boolean transparent = client.isResized() && client.getVar(Varbits.TRANSPARENT_CHATBOX) == 1;
+		boolean transparent = client.isResized() && client.getVarbitValue(Varbits.TRANSPARENT_CHATBOX) == 1;
 
 		Color color = configManager.getConfiguration(
 			"textrecolor",
