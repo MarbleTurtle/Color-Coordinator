@@ -86,18 +86,15 @@ public class SmartChatInputColorPlugin extends Plugin
 		try
 		{
 			String playerName = client.getLocalPlayer().getName();
-			if (input.equals(playerName + ": Press Enter to Chat...") ||
-				input.equals("Friends Chat: Press Enter to Chat...") ||
-				input.equals("Clan Chat: Press Enter to Chat...") ||
-				input.equals("Guest Clan Chat: Press Enter to Chat..."))
+			if (input.matches(playerName + "( \\(((guest )?clan|channel)\\))?: Press Enter to Chat\\Q...\\E"))
 			{
 				return;
 			}
 
-			String name = input.contains(":") ? input.split(":")[0] + ":" : playerName + ":";
+			String name = input.contains(":") ? input.split(":")[0]: playerName;
 			String text = client.getVar(VarClientStr.CHATBOX_TYPED_TEXT);
 			Color color = computeChannelColor(deriveChatChannel(name, text));
-			inputWidget.setText(name + " " + ColorUtil.wrapWithColorTag(Text.escapeJagex(text) + "*", color));
+			inputWidget.setText(name + ": " + ColorUtil.wrapWithColorTag(Text.escapeJagex(text) + "*", color));
 		}
 		catch (NullPointerException ignored)
 		{
@@ -129,14 +126,14 @@ public class SmartChatInputColorPlugin extends Plugin
 		}
 
 		// If not a prefix, check if in a certain chat mode
-		switch (name)
-		{
-			case "Friends Chat:":
-				return client.getFriendsChatManager() != null ? ChatChannel.FRIEND : ChatChannel.PUBLIC;
-			case "Clan Chat:":
-				return ChatChannel.CLAN;
-			case "Guest Clan Chat:":
-				return ChatChannel.GUEST;
+		if (name.endsWith("(channel)")) {
+			return ChatChannel.CLAN;
+		}
+		if (name.endsWith("(clan)")) {
+			return client.getFriendsChatManager() != null ? ChatChannel.FRIEND : ChatChannel.PUBLIC;
+		}
+		if (name.endsWith("(guest clan)")) {
+			return ChatChannel.GUEST;
 		}
 
 		// If not in a chat mode, check if the typed texts starts with one of the prefixes
