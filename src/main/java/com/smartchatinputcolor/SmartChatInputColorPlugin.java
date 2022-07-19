@@ -86,16 +86,12 @@ public class SmartChatInputColorPlugin extends Plugin
 		try
 		{
 			String playerName = client.getLocalPlayer().getName();
-			if (input.equals(playerName + ": Press Enter to Chat...") ||
-				input.equals("Friends Chat: Press Enter to Chat...") ||
-				input.equals("Clan Chat: Press Enter to Chat...") ||
-				input.equals("Guest Clan Chat: Press Enter to Chat..."))
+			if (input.split(":",2)[1].equals(" Press Enter to Chat..."))
 			{
 				return;
 			}
-
 			String name = input.contains(":") ? input.split(":")[0] + ":" : playerName + ":";
-			String text = client.getVar(VarClientStr.CHATBOX_TYPED_TEXT);
+			String text = client.getVarcStrValue(VarClientStr.CHATBOX_TYPED_TEXT);
 			Color color = computeChannelColor(deriveChatChannel(name, text));
 			inputWidget.setText(name + " " + ColorUtil.wrapWithColorTag(Text.escapeJagex(text) + "*", color));
 		}
@@ -118,27 +114,39 @@ public class SmartChatInputColorPlugin extends Plugin
 		// First check if the text is exactly one of the prefixes
 		switch (text)
 		{
-			case "/p":
+			case "/@p":
 				return ChatChannel.PUBLIC;
-			case "/f":
+			case "/@f":
 				return ChatChannel.FRIEND;
-			case "/c":
+			case "/@c":
 				return ChatChannel.CLAN;
-			case "/g":
+			case "/@g":
 				return ChatChannel.GUEST;
 		}
-
-		// If not a prefix, check if in a certain chat mode
-		switch (name)
+		// Check if they are attempting to talk to a specific channel
+		switch (text.split(" ")[0])
 		{
-			case "Friends Chat:":
-				return client.getFriendsChatManager() != null ? ChatChannel.FRIEND : ChatChannel.PUBLIC;
-			case "Clan Chat:":
+			case "/@p":
+				return ChatChannel.PUBLIC;
+			case "/@f":
+				return ChatChannel.FRIEND;
+			case "/@c":
 				return ChatChannel.CLAN;
-			case "Guest Clan Chat:":
+			case "/@g":
 				return ChatChannel.GUEST;
 		}
-
+		// If not a prefix, check if in a certain chat mode
+		if(name.contains("(")) {
+			name=name.split("\\(")[1].split("\\)")[0];
+			switch (name) {
+				case "channel":
+					return client.getFriendsChatManager() != null ? ChatChannel.FRIEND : ChatChannel.PUBLIC;
+				case "clan":
+					return ChatChannel.CLAN;
+				case "guest clan":
+					return ChatChannel.GUEST;
+			}
+		}
 		// If not in a chat mode, check if the typed texts starts with one of the prefixes
 		if (text.startsWith("///") || (text.startsWith("/g ") || text.matches("/g")))
 		{
