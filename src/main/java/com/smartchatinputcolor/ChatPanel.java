@@ -17,7 +17,7 @@ enum ChatPanel {
 
 	private final int id;
 
-	public static ChatPanel fromVarcIntValue(int value) {
+	public static ChatPanel fromInt(int value) {
 		for (ChatPanel chatPanel : ChatPanel.values()) {
 			if (chatPanel.id == value) {
 				return chatPanel;
