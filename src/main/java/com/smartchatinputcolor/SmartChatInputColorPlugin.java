@@ -8,6 +8,7 @@ import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 
 import net.runelite.api.*;
+import net.runelite.api.annotations.Varp;
 import net.runelite.api.events.*;
 import net.runelite.api.vars.AccountType;
 import net.runelite.api.widgets.Widget;
@@ -169,7 +170,7 @@ public class SmartChatInputColorPlugin extends Plugin {
 			(transparent
 				? channel.getTransparentVarpId()
 				: channel.getOpaqueVarpId()
-			).getId()
+			)
 		) - 1;
 		if (colorCode == 0) {
 			return Color.BLACK;
@@ -320,10 +321,10 @@ public class SmartChatInputColorPlugin extends Plugin {
 	@Subscribe
 	public void onVarbitChanged(VarbitChanged varbitChanged) {
 		// TODO: Update the color map with more granularity
-		int varPlayerId = varbitChanged.getVarpId();
+		@Varp int varPlayerId = varbitChanged.getVarpId();
 		for (ChatChannel channel : ChatChannel.values()) {
-			if (varPlayerId == channel.getOpaqueVarpId().getId() ||
-				varPlayerId == channel.getTransparentVarpId().getId()) {
+			if (varPlayerId == channel.getOpaqueVarpId() ||
+				varPlayerId == channel.getTransparentVarpId()) {
 				populateChatChannelColorMap();
 				return;
 			}
