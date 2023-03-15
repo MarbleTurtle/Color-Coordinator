@@ -45,8 +45,8 @@ enum ChatChannel {
 			Pattern.compile("^/(@?g|/{3}).*"));
 
 	private final String colorConfigKey;
-	private final VarPlayer transparentVarpId;
-	private final VarPlayer opaqueVarpId;
+	private final int transparentVarpId;
+	private final int opaqueVarpId;
 	private final int transparentDefaultRgb;
 	private final int opaqueDefaultRgb;
 	@Getter(AccessLevel.NONE)

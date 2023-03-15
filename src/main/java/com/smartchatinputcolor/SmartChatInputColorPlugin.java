@@ -169,7 +169,7 @@ public class SmartChatInputColorPlugin extends Plugin {
 			(transparent
 				? channel.getTransparentVarpId()
 				: channel.getOpaqueVarpId()
-			).getId()
+			)
 		) - 1;
 		if (colorCode == 0) {
 			return Color.BLACK;
@@ -322,8 +322,8 @@ public class SmartChatInputColorPlugin extends Plugin {
 		// TODO: Update the color map with more granularity
 		int varPlayerId = varbitChanged.getVarpId();
 		for (ChatChannel channel : ChatChannel.values()) {
-			if (varPlayerId == channel.getOpaqueVarpId().getId() ||
-				varPlayerId == channel.getTransparentVarpId().getId()) {
+			if (varPlayerId == channel.getOpaqueVarpId() ||
+				varPlayerId == channel.getTransparentVarpId()) {
 				populateChatChannelColorMap();
 				return;
 			}
