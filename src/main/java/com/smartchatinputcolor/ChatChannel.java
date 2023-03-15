@@ -4,6 +4,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import net.runelite.api.VarPlayer;
+import net.runelite.api.annotations.Varp;
 
 import java.util.regex.Pattern;
 
@@ -45,8 +46,8 @@ enum ChatChannel {
 			Pattern.compile("^/(@?g|/{3}).*"));
 
 	private final String colorConfigKey;
-	private final int transparentVarpId;
-	private final int opaqueVarpId;
+	private final @Varp int transparentVarpId;
+	private final @Varp int opaqueVarpId;
 	private final int transparentDefaultRgb;
 	private final int opaqueDefaultRgb;
 	@Getter(AccessLevel.NONE)
