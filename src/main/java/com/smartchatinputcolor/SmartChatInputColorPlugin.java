@@ -3,6 +3,7 @@ package com.smartchatinputcolor;
 import java.awt.*;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.*;
 import javax.inject.Inject;
 
 import lombok.extern.slf4j.Slf4j;

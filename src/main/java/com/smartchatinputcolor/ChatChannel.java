@@ -29,7 +29,7 @@ enum ChatChannel {
 			VarPlayer.SETTINGS_OPAQUE_CHAT_CLAN,
 			0x7F0000,
 			0x7F0000,
-			Pattern.compile("^/(@?c|/).*")),
+			Pattern.compile("^/(@c|c |/).*")),
 	GUEST(
 			"ClanGuestMessage",
 			VarPlayer.SETTINGS_TRANSPARENT_CHAT_GUEST_CLAN,

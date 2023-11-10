@@ -24,7 +24,7 @@ dependencies {
 }
 
 group = 'com.smartchatinputcolor'
-version = '1.4.1'
+version = '1.4.2'
 
 tasks.withType(JavaCompile) {
 	options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
