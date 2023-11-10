@@ -10,9 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.annotations.Varp;
 import net.runelite.api.events.*;
-import net.runelite.api.vars.AccountType;
-import net.runelite.api.widgets.Widget;
-import net.runelite.api.widgets.WidgetInfo;
+import net.runelite.api.widgets.*;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
@@ -69,7 +67,7 @@ public class SmartChatInputColorPlugin extends Plugin {
 	 * the channel that the message will be sent to
 	 */
 	private void recolorChatTypedText() {
-		Widget inputWidget = client.getWidget(WidgetInfo.CHATBOX_INPUT);
+		Widget inputWidget = client.getWidget(ComponentID.CHATBOX_INPUT);
 		if (inputWidget == null) {
 			return;
 		}
@@ -214,8 +212,11 @@ public class SmartChatInputColorPlugin extends Plugin {
 	 * @return Chat channel that the message will go to
 	 */
 	private ChatChannel getGIMChatChannel(String text) {
-		if (client.getAccountType() == AccountType.GROUP_IRONMAN) {
-			return ChatChannel.GIM;
+		switch (client.getVarbitValue(Varbits.ACCOUNT_TYPE)) {
+			case 4: // GIM
+			case 5: // HCGIM
+			case 6: // UGIM
+				return ChatChannel.GIM;
 		}
 
 		if (text.startsWith("/g")) {
