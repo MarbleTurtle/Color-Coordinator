@@ -117,12 +117,14 @@ public class SmartChatInputColorPlugin extends Plugin {
 		if (ChatChannel.CLAN.matchesRegex(text)) {
 			return ChatChannel.CLAN;
 		}
-		if (ChatChannel.FRIEND.matchesRegex(text)) {
-			return getFriendsChatChannel();
-		}
 		if (ChatChannel.PUBLIC.matchesRegex(text)) {
 			return ChatChannel.PUBLIC;
 		}
+		// Check FC last. Otherwise, it will match "/" too soon.
+		if (ChatChannel.FRIEND.matchesRegex(text)) {
+			return getFriendsChatChannel();
+		}
+
 
 		// If not a prefix, check if in a certain chat mode
 		if (name.contains("(")) {

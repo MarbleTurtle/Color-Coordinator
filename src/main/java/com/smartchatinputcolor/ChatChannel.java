@@ -16,7 +16,7 @@ enum ChatChannel {
 			VarPlayer.SETTINGS_OPAQUE_CHAT_PUBLIC,
 			0x9090FF,
 			0x0000FF,
-			Pattern.compile("^/@?p.*")),
+			Pattern.compile("^/(@p|p ).*")),
 	FRIEND("ClanChatMessage",
 			VarPlayer.SETTINGS_TRANSPARENT_CHAT_FRIEND,
 			VarPlayer.SETTINGS_OPAQUE_CHAT_FRIEND,
