@@ -3,7 +3,6 @@ package com.smartchatinputcolor;
 import java.awt.*;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.regex.*;
 import javax.inject.Inject;
 
 import lombok.extern.slf4j.Slf4j;
@@ -38,7 +37,7 @@ public class SmartChatInputColorPlugin extends Plugin {
 
 	private ChatPanel selectedChatPanel = null;
 
-	private boolean isInFriendsChat = false;
+	private ChatChannel friendsChatChannel = null;
 
 	private boolean hoppingWorlds = false;
 
@@ -59,7 +58,7 @@ public class SmartChatInputColorPlugin extends Plugin {
 		log.debug("Smart Chat Input Color stopping!");
 		// Reset when stopping plugin
 		selectedChatPanel = null;
-		isInFriendsChat = false;
+		friendsChatChannel = null;
 		channelColorMap.clear();
 	}
 
@@ -88,9 +87,7 @@ public class SmartChatInputColorPlugin extends Plugin {
 		String name = (
 			input.contains(":") ? input.split(":")[0] : player.getName()
 		);
-		String text = client.getVarcStrValue(
-			VarClientStr.CHATBOX_TYPED_TEXT
-		);
+		String text = client.getVarcStrValue(VarClientStr.CHATBOX_TYPED_TEXT);
 		inputWidget.setText(
 			name + ": " + ColorUtil.wrapWithColorTag(
 				Text.escapeJagex(text) + "*",
@@ -122,16 +119,14 @@ public class SmartChatInputColorPlugin extends Plugin {
 		}
 		// Check FC last. Otherwise, it will match "/" too soon.
 		if (ChatChannel.FRIEND.matchesRegex(text)) {
-			return getFriendsChatChannel();
+			return friendsChatChannel;
 		}
-
 
 		// If not a prefix, check if in a certain chat mode
 		if (name.contains("(")) {
-			name = name.split("\\(")[1].replace(")", "");
-			switch (name) {
+			switch (name.split("\\(")[1].replace(")", "")) {
 				case "channel":
-					return getFriendsChatChannel();
+					return friendsChatChannel;
 				case "clan":
 					return ChatChannel.CLAN;
 				case "guest clan":
@@ -202,7 +197,7 @@ public class SmartChatInputColorPlugin extends Plugin {
 	 *
 	 * @return Chat channel that the message will go to
 	 */
-	public ChatChannel getFriendsChatChannel() {
+	private ChatChannel getFriendsChatChannel(boolean isInFriendsChat) {
 		return isInFriendsChat ? ChatChannel.FRIEND : ChatChannel.PUBLIC;
 	}
 
@@ -223,7 +218,7 @@ public class SmartChatInputColorPlugin extends Plugin {
 		}
 
 		if (text.startsWith("/g")) {
-			return getFriendsChatChannel();
+			return friendsChatChannel;
 		}
 
 		if (text.startsWith("/@g")) {
@@ -234,6 +229,8 @@ public class SmartChatInputColorPlugin extends Plugin {
 			return ChatChannel.GUEST;
 		}
 
+		// This never happens because the string passed into this function
+		// will always start with one of the prefixes handled above
 		return ChatChannel.GIM;
 	}
 
@@ -246,7 +243,7 @@ public class SmartChatInputColorPlugin extends Plugin {
 	private ChatChannel getSelectedChatPanelChannel() {
 		switch (selectedChatPanel) {
 			case CHANNEL:
-				return getFriendsChatChannel();
+				return friendsChatChannel;
 			case CLAN:
 				return ChatChannel.CLAN;
 			default:
@@ -294,12 +291,16 @@ public class SmartChatInputColorPlugin extends Plugin {
 	 */
 	@Subscribe
 	public void onGameTick(GameTick ignored) {
-		if (shouldInitialize) {
-			selectedChatPanel = ChatPanel.fromInt(client.getVarcIntValue(41));
-			isInFriendsChat = client.getFriendsChatManager() != null;
-			populateChatChannelColorMap();
-		}
-	}
+        if (!shouldInitialize) {
+            return;
+        }
+
+        selectedChatPanel = ChatPanel.fromInt(client.getVarcIntValue(41));
+        friendsChatChannel = getFriendsChatChannel(
+            client.getFriendsChatManager() != null
+        );
+        populateChatChannelColorMap();
+    }
 
 	/**
 	 * Update chat channel color map when a relevant RL config is changed
@@ -308,14 +309,16 @@ public class SmartChatInputColorPlugin extends Plugin {
 	 */
 	@Subscribe
 	public void onConfigChanged(ConfigChanged configChanged) {
+        if (!configChanged.getGroup().equals("textrecolor")) {
+            return;
+        }
+
 		// TODO: Update the color map with more granularity
-		if (configChanged.getGroup().equals("textrecolor")) {
-			clientThread.invoke(() -> {
-				populateChatChannelColorMap();
-				recolorChatTypedText();
-			});
-		}
-	}
+        clientThread.invoke(() -> {
+            populateChatChannelColorMap();
+            recolorChatTypedText();
+        });
+    }
 
 	/**
 	 * Update chat channel color map when a relevant in-game setting is changed
@@ -355,7 +358,7 @@ public class SmartChatInputColorPlugin extends Plugin {
 	 */
 	@Subscribe
 	public void onFriendsChatChanged(FriendsChatChanged friendsChatChanged) {
-		isInFriendsChat = friendsChatChanged.isJoined();
+		friendsChatChannel = getFriendsChatChannel(friendsChatChanged.isJoined());
 		recolorChatTypedText();
 	}
 }
