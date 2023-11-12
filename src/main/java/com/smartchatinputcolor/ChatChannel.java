@@ -36,7 +36,7 @@ enum ChatChannel {
 			VarPlayer.SETTINGS_OPAQUE_CHAT_GUEST_CLAN,
 			0x7F0000,
 			0x7F0000,
-			Pattern.compile("^/(@?gc|//).*")),
+			Pattern.compile("^/(@gc|gc |//).*")),
 	GIM(
 			null,
 			VarPlayer.SETTINGS_TRANSPARENT_CHAT_IRON_GROUP_CHAT,
