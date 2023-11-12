@@ -108,11 +108,11 @@ public class SmartChatInputColorPlugin extends Plugin {
 	 */
 	private ChatChannel deriveChatChannel(String name, String text) {
 		// First check if the text starts with one of the prefixes
-		if (ChatChannel.GUEST.matchesRegex(text)) {
-			return ChatChannel.GUEST;
-		}
 		if (ChatChannel.GIM.matchesRegex(text)) {
 			return getGIMChatChannel(text);
+		}
+		if (ChatChannel.GUEST.matchesRegex(text)) {
+			return ChatChannel.GUEST;
 		}
 		if (ChatChannel.CLAN.matchesRegex(text)) {
 			return ChatChannel.CLAN;

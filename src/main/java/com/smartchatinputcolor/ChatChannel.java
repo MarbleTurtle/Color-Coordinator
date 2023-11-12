@@ -43,7 +43,7 @@ enum ChatChannel {
 			VarPlayer.SETTINGS_OPAQUE_CHAT_IRON_GROUP_CHAT,
 			0x7F0000,
 			0x7F0000,
-			Pattern.compile("^/(@?g|/{3}).*"));
+			Pattern.compile("^/(@g[^c]|g |/{3}).*"));
 
 	private final String colorConfigKey;
 	private final @Varp int transparentVarpId;
