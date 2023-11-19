@@ -25,446 +25,447 @@ import java.util.Optional;
 
 @Slf4j
 @PluginDescriptor(
-	name = "Smart Chat Input Color",
-	configName = "smart-chat-input-color"
+    name = "Smart Chat Input Color",
+    configName = "smart-chat-input-color"
 )
 public class SmartChatInputColorPlugin extends Plugin {
-	@Inject
-	private Client client;
+    @Inject
+    private Client client;
 
-	@Inject
-	private SmartChatInputColorPluginConfig config;
+    @Inject
+    private SmartChatInputColorPluginConfig config;
 
-	@Inject
-	private ConfigManager configManager;
+    @Inject
+    private ConfigManager configManager;
 
-	@Inject
-	private PluginManager pluginManager;
+    @Inject
+    private PluginManager pluginManager;
 
-	@Inject
-	private ClientThread clientThread;
+    @Inject
+    private ClientThread clientThread;
 
-	private ChatPanel selectedChatPanel = null;
+    private ChatPanel selectedChatPanel = null;
 
-	private ChatChannel friendsChatChannel = null;
+    private ChatChannel friendsChatChannel = null;
 
-	private boolean hoppingWorlds = false;
+    private boolean hoppingWorlds = false;
 
-	private boolean shouldInitialize = false;
+    private boolean shouldInitialize = false;
 
-	private boolean slashSwapperBug = false;
+    private boolean slashSwapperBug = false;
 
-	private final Map<ChatChannel, Color> channelColorMap = new HashMap<>();
+    private final Map<ChatChannel, Color> channelColorMap = new HashMap<>();
 
-	@Override
-	protected void startUp() {
-		log.debug("Smart Chat Input Color starting!");
-		if (client.getGameState() == GameState.LOGGED_IN) {
-			shouldInitialize = true;
-		}
-	}
+    @Override
+    protected void startUp() {
+        log.debug("Smart Chat Input Color starting!");
+        if (client.getGameState() == GameState.LOGGED_IN) {
+            shouldInitialize = true;
+        }
+    }
 
-	@Override
-	protected void shutDown() {
-		log.debug("Smart Chat Input Color stopping!");
-		// Reset when stopping plugin
-		selectedChatPanel = null;
-		friendsChatChannel = null;
-		channelColorMap.clear();
-	}
+    @Override
+    protected void shutDown() {
+        log.debug("Smart Chat Input Color stopping!");
+        // Reset when stopping plugin
+        selectedChatPanel = null;
+        friendsChatChannel = null;
+        channelColorMap.clear();
+    }
 
-	@Provides
-	SmartChatInputColorPluginConfig provideConfig(ConfigManager configManager) {
-		return configManager.getConfig(SmartChatInputColorPluginConfig.class);
-	}
+    @Provides
+    SmartChatInputColorPluginConfig provideConfig(ConfigManager configManager) {
+        return configManager.getConfig(SmartChatInputColorPluginConfig.class);
+    }
 
-	/**
-	 * Recolor the text typed in the chat, based on
-	 * the channel that the message will be sent to
-	 */
-	private void recolorChatTypedText() {
-		Widget inputWidget = client.getWidget(ComponentID.CHATBOX_INPUT);
-		if (inputWidget == null) {
-			return;
-		}
+    /**
+     * Recolor the text typed in the chat, based on
+     * the channel that the message will be sent to
+     */
+    private void recolorChatTypedText() {
+        Widget inputWidget = client.getWidget(ComponentID.CHATBOX_INPUT);
+        if (inputWidget == null) {
+            return;
+        }
 
-		String input = inputWidget.getText();
-		// Key Remapping is active and chat is locked, do not recolor
-		if (input.endsWith("Press Enter to Chat...")) {
-			return;
-		}
+        String input = inputWidget.getText();
+        // Key Remapping is active and chat is locked, do not recolor
+        if (input.endsWith("Press Enter to Chat...")) {
+            return;
+        }
 
-		// Get player, is null when just logging in, so check and abort
-		Player player = client.getLocalPlayer();
-		if (player == null) {
-			return;
-		}
+        // Get player, is null when just logging in, so check and abort
+        Player player = client.getLocalPlayer();
+        if (player == null) {
+            return;
+        }
 
-		String name = (
-			input.contains(":") ? input.split(":")[0] : player.getName()
-		);
-		String text = client.getVarcStrValue(VarClientStr.CHATBOX_TYPED_TEXT);
-		inputWidget.setText(
-			name + ": " + ColorUtil.wrapWithColorTag(
-				Text.escapeJagex(text) + "*",
-				channelColorMap.get(deriveChatChannel(name, text))
-			)
-		);
-	}
+        String name = (
+            input.contains(":") ? input.split(":")[0] : player.getName()
+        );
+        String text = client.getVarcStrValue(VarClientStr.CHATBOX_TYPED_TEXT);
+        inputWidget.setText(
+            name + ": " + ColorUtil.wrapWithColorTag(
+                Text.escapeJagex(text) + "*",
+                channelColorMap.get(deriveChatChannel(name, text))
+            )
+        );
+    }
 
-	/**
-	 * Decide which channel color the input text should get
-	 *
-	 * @param name Chat prefix (player name, or active chat mode)
-	 * @param text Chat input text typed by the player
-	 * @return Chat channel whose color the input text should be recolored to
-	 */
-	private ChatChannel deriveChatChannel(String name, String text) {
-		// First check if the text starts with one of the prefixes
-		ChatChannel channel = findChannelByMessagePrefix(text);
-		if (channel != null)
-		{
-			return channel;
-		}
+    /**
+     * Decide which channel color the input text should get
+     *
+     * @param name Chat prefix (player name, or active chat mode)
+     * @param text Chat input text typed by the player
+     * @return Chat channel whose color the input text should be recolored to
+     */
+    private ChatChannel deriveChatChannel(String name, String text) {
+        // First check if the text starts with one of the prefixes
+        ChatChannel channel = findChannelByMessagePrefix(text);
+        if (channel != null) {
+            return channel;
+        }
 
-		// If it didn't match a prefix, check if in a certain chat mode
-		if (name.contains("(")) {
-			switch (name.split("\\(")[1].replace(")", "")) {
-				case "channel":
-					return friendsChatChannel;
-				case "clan":
-					return ChatChannel.CLAN;
-				case "guest clan":
-					return ChatChannel.GUEST;
-				case "group":
-					return ChatChannel.GIM;
-			}
-		}
+        // If it didn't match a prefix, check if in a certain chat mode
+        if (name.contains("(")) {
+            switch (name.split("\\(")[1].replace(")", "")) {
+                case "channel":
+                    return friendsChatChannel;
+                case "clan":
+                    return ChatChannel.CLAN;
+                case "guest clan":
+                    return ChatChannel.GUEST;
+                case "group":
+                    return ChatChannel.GIM;
+            }
+        }
 
-		// No indicators from message prefix or chat mode,
-		// so the message will be sent to the open chat panel
-		return getSelectedChatPanelChannel();
-	}
+        // No indicators from message prefix or chat mode,
+        // so the message will be sent to the open chat panel
+        return getSelectedChatPanelChannel();
+    }
 
-	/**
-	 * Find the channel that a message would be sent to based on the prefix.
-	 *
-	 * @param text Chat message input
-	 * @return Channel that the message would be sent to or null
-	 */
-	private ChatChannel findChannelByMessagePrefix(String text) {
-		// First check if the prefix regex matches
-		for (ChatChannel channel : ChatChannel.values()) {
-			if (!channel.matchesPrefixRegex(text)) {
-				continue;
-			}
+    /**
+     * Find the channel that a message would be sent to based on the prefix.
+     *
+     * @param text Chat message input
+     * @return Channel that the message would be sent to or null
+     */
+    private ChatChannel findChannelByMessagePrefix(String text) {
+        // First check if the prefix regex matches
+        for (ChatChannel channel : ChatChannel.values()) {
+            if (!channel.matchesPrefixRegex(text)) {
+                continue;
+            }
 
-			return getResultingChannel(channel, text);
-		}
+            return getResultingChannel(channel, text);
+        }
 
-		// Check the slash prefix if there is no regex match.
-		ChatChannel channel = ChatChannel.getBySlashPrefix(text);
+        // Check the slash prefix if there is no regex match.
+        ChatChannel channel = ChatChannel.getBySlashPrefix(text);
 
-		// If Slash Swapper bug is active and the result is guest chat (///),
-		// return friend instead. Return the result found otherwise.
-		return getResultingChannel(
-			slashSwapperBug && channel == ChatChannel.GUEST
-				? ChatChannel.FRIEND
-				: channel,
-			text
-		);
-	}
+        // If Slash Swapper bug is active and the result is guest chat (///),
+        // return friend instead. Return the result found otherwise.
+        return getResultingChannel(
+            slashSwapperBug && channel == ChatChannel.GUEST
+                ? ChatChannel.FRIEND
+                : channel,
+            text
+        );
+    }
 
-	/**
-	 * Compute the color of a chat channel based on RL and in-game settings
-	 *
-	 * @param channel Chat channel
-	 * @return Color that the text should be colored for the given chat channel
-	 */
-	private Color computeChannelColor(ChatChannel channel, boolean transparent) {
-		String colorConfigKey = channel.getColorConfigKey();
-		if (colorConfigKey != null) {
-			Color color = configManager.getConfiguration(
-				"textrecolor",
-				(transparent ? "transparent" : "opaque") + colorConfigKey,
-				Color.class
-			);
-			if (color != null) {
-				return color;
-			}
-		}
+    /**
+     * Compute the color of a chat channel based on RL and in-game settings
+     *
+     * @param channel Chat channel
+     * @return Color that the text should be colored for the given chat channel
+     */
+    private Color computeChannelColor(ChatChannel channel, boolean transparent) {
+        String colorConfigKey = channel.getColorConfigKey();
+        if (colorConfigKey != null) {
+            Color color = configManager.getConfiguration(
+                "textrecolor",
+                (transparent ? "transparent" : "opaque") + colorConfigKey,
+                Color.class
+            );
+            if (color != null) {
+                return color;
+            }
+        }
 
-		int colorCode = client.getVarpValue(
-			(transparent
-				? channel.getTransparentVarpId()
-				: channel.getOpaqueVarpId()
-			)
-		) - 1;
-		if (colorCode == 0) {
-			return Color.BLACK;
-		}
-		if (colorCode == -1) {
-			return new Color(
-				transparent
-					? channel.getTransparentDefaultRgb()
-					: channel.getOpaqueDefaultRgb()
-			);
-		}
+        int colorCode = client.getVarpValue(
+            (transparent
+                ? channel.getTransparentVarpId()
+                : channel.getOpaqueVarpId()
+            )
+        ) - 1;
+        if (colorCode == 0) {
+            return Color.BLACK;
+        }
+        if (colorCode == -1) {
+            return new Color(
+                transparent
+                    ? channel.getTransparentDefaultRgb()
+                    : channel.getOpaqueDefaultRgb()
+            );
+        }
 
-		return new Color(colorCode);
-	}
+        return new Color(colorCode);
+    }
 
-	/**
-	 * Update the mapped color for each chat channel
-	 */
-	private void populateChatChannelColorMap() {
-		boolean transparent = client.isResized() &&
-			client.getVarbitValue(Varbits.TRANSPARENT_CHATBOX) == 1;
-		for (ChatChannel c : ChatChannel.values()) {
-			channelColorMap.put(c, computeChannelColor(c, transparent));
-		}
-	}
+    /**
+     * Update the mapped color for each chat channel
+     */
+    private void populateChatChannelColorMap() {
+        boolean transparent = client.isResized() &&
+            client.getVarbitValue(Varbits.TRANSPARENT_CHATBOX) == 1;
+        for (ChatChannel c : ChatChannel.values()) {
+            channelColorMap.put(c, computeChannelColor(c, transparent));
+        }
+    }
 
-	/**
-	 * Find the chat channel that a message will be
-	 * sent to if trying to send to friends channel
-	 *
-	 * @return Chat channel that the message will go to
-	 */
-	private ChatChannel getFriendsChatChannel(boolean isInFriendsChat) {
-		return isInFriendsChat ? ChatChannel.FRIEND : ChatChannel.PUBLIC;
-	}
+    /**
+     * Find the chat channel that a message will be
+     * sent to if trying to send to friends channel
+     *
+     * @return Chat channel that the message will go to
+     */
+    private ChatChannel getFriendsChatChannel(boolean isInFriendsChat) {
+        return isInFriendsChat ? ChatChannel.FRIEND : ChatChannel.PUBLIC;
+    }
 
-	/**
-	 * Find the resulting channel, keeping in mind whether
-	 * the player is currently in a friends channel
-	 * @param channel Chat channel trying to send the message to
-	 * @return Chat channel that the message will really go to
-	 */
-	private ChatChannel getResultingChannel(ChatChannel channel) {
-		if (channel == null) {
-			return null;
-		}
+    /**
+     * Find the resulting channel, keeping in mind whether
+     * the player is currently in a friends channel
+     *
+     * @param channel Chat channel trying to send the message to
+     * @return Chat channel that the message will really go to
+     */
+    private ChatChannel getResultingChannel(ChatChannel channel) {
+        if (channel == null) {
+            return null;
+        }
 
-		return channel == ChatChannel.FRIEND ? friendsChatChannel : channel;
-	}
+        return channel == ChatChannel.FRIEND ? friendsChatChannel : channel;
+    }
 
-	/**
-	 * Find the resulting channel, keeping in mind whether the player is
-	 * currently in a friends channel or the player has a GIM account
-	 * @param channel Chat channel trying to send the message to
-	 * @return Chat channel that the message will really go to
-	 */
-	private ChatChannel getResultingChannel(ChatChannel channel, String text) {
-		if (channel == null) {
-			return null;
-		}
+    /**
+     * Find the resulting channel, keeping in mind whether the player is
+     * currently in a friends channel or the player has a GIM account
+     *
+     * @param channel Chat channel trying to send the message to
+     * @return Chat channel that the message will really go to
+     */
+    private ChatChannel getResultingChannel(ChatChannel channel, String text) {
+        if (channel == null) {
+            return null;
+        }
 
-		switch (channel) {
-			case FRIEND:
-				return friendsChatChannel;
-			case GIM:
-				return getGIMChatChannel(text);
-			default:
-				return channel;
-		}
-	}
+        switch (channel) {
+            case FRIEND:
+                return friendsChatChannel;
+            case GIM:
+                return getGIMChatChannel(text);
+            default:
+                return channel;
+        }
+    }
 
-	/**
-	 * Find the chat channel that a message will be sent to when
-	 * trying to send to group ironman channel. If an account
-	 * is a Group Ironman, the Group Ironman chat channel is
-	 * available. Otherwise, a bit more logic is involved.
-	 *
-	 * @return Chat channel that the message will go to
-	 */
-	private ChatChannel getGIMChatChannel(String text) {
-		switch (client.getVarbitValue(Varbits.ACCOUNT_TYPE)) {
-			case 4: // GIM
-			case 5: // HCGIM
-			case 6: // UGIM
-				return ChatChannel.GIM;
-		}
+    /**
+     * Find the chat channel that a message will be sent to when
+     * trying to send to group ironman channel. If an account
+     * is a Group Ironman, the Group Ironman chat channel is
+     * available. Otherwise, a bit more logic is involved.
+     *
+     * @return Chat channel that the message will go to
+     */
+    private ChatChannel getGIMChatChannel(String text) {
+        switch (client.getVarbitValue(Varbits.ACCOUNT_TYPE)) {
+            case 4: // GIM
+            case 5: // HCGIM
+            case 6: // UGIM
+                return ChatChannel.GIM;
+        }
 
-		if (text.startsWith("/g")) {
-			return getResultingChannel(ChatChannel.getBySlashCount(1));
-		}
+        if (text.startsWith("/g")) {
+            return getResultingChannel(ChatChannel.getBySlashCount(1));
+        }
 
-		if (text.startsWith("/@g")) {
-			return ChatChannel.CLAN;
-		}
+        if (text.startsWith("/@g")) {
+            return ChatChannel.CLAN;
+        }
 
-		if (text.startsWith("////")) {
-			return getResultingChannel(ChatChannel.getBySlashCount(3));
-		}
+        if (text.startsWith("////")) {
+            return getResultingChannel(ChatChannel.getBySlashCount(3));
+        }
 
-		// This never happens because the string passed into this function
-		// will always start with one of the prefixes handled above
-		return ChatChannel.GIM;
-	}
+        // This never happens because the string passed into this function
+        // will always start with one of the prefixes handled above
+        return ChatChannel.GIM;
+    }
 
-	/**
-	 * Get the chat channel that a message should be sent
-	 * to, based on the currently selected chat panel
-	 *
-	 * @return Chat channel that the message will go to
-	 */
-	private ChatChannel getSelectedChatPanelChannel() {
-		switch (selectedChatPanel) {
-			case CHANNEL:
-				return friendsChatChannel;
-			case CLAN:
-				return ChatChannel.CLAN;
-			default:
-				return ChatChannel.PUBLIC;
-		}
-	}
+    /**
+     * Get the chat channel that a message should be sent
+     * to, based on the currently selected chat panel
+     *
+     * @return Chat channel that the message will go to
+     */
+    private ChatChannel getSelectedChatPanelChannel() {
+        switch (selectedChatPanel) {
+            case CHANNEL:
+                return friendsChatChannel;
+            case CLAN:
+                return ChatChannel.CLAN;
+            default:
+                return ChatChannel.PUBLIC;
+        }
+    }
 
-	/**
-	 * Configure up slash prefixes based on whether Slash Swapper is active
-	 */
-	private void configureSlashPrefixes() {
-		Optional<Plugin> maybeSlashSwapper = pluginManager.getPlugins()
-			.stream()
-			.filter(p ->
-				p.getName().equals("Slash Swapper") &&
-					pluginManager.isPluginEnabled(p)
-			)
-			.findFirst();
+    /**
+     * Configure up slash prefixes based on whether Slash Swapper is active
+     */
+    private void configureSlashPrefixes() {
+        Optional<Plugin> maybeSlashSwapper = pluginManager.getPlugins()
+            .stream()
+            .filter(p ->
+                p.getName().equals("Slash Swapper") &&
+                    pluginManager.isPluginEnabled(p)
+            )
+            .findFirst();
 
-		if (maybeSlashSwapper.isEmpty()) {
-			slashSwapperBug = false;
-			ChatChannel.defaultSlashPrefixes();
-			return;
-		}
+        if (maybeSlashSwapper.isEmpty()) {
+            slashSwapperBug = false;
+            ChatChannel.defaultSlashPrefixes();
+            return;
+        }
 
-		boolean guestChatConfig = configManager.getConfiguration(
-			"slashswapper",
-			"slashGuestChat",
-			boolean.class
-		);
-		slashSwapperBug = !guestChatConfig && config.slashSwapperBug();
-		ChatChannel.slashSwapperPrefixes(guestChatConfig);
+        boolean guestChatConfig = configManager.getConfiguration(
+            "slashswapper",
+            "slashGuestChat",
+            boolean.class
+        );
+        slashSwapperBug = !guestChatConfig && config.slashSwapperBug();
+        ChatChannel.slashSwapperPrefixes(guestChatConfig);
 
-	}
+    }
 
-	/**
-	 * Recolor the chat input when the player selects
-	 * a chat tab, or when the user is typing
-	 *
-	 * @param scriptPostFired information about the fired script
-	 */
-	@Subscribe
-	public void onScriptPostFired(ScriptPostFired scriptPostFired) {
-		if (scriptPostFired.getScriptId() == ScriptID.CHAT_PROMPT_INIT) {
-			recolorChatTypedText();
-		}
-	}
+    /**
+     * Recolor the chat input when the player selects
+     * a chat tab, or when the user is typing
+     *
+     * @param scriptPostFired information about the fired script
+     */
+    @Subscribe
+    public void onScriptPostFired(ScriptPostFired scriptPostFired) {
+        if (scriptPostFired.getScriptId() == ScriptID.CHAT_PROMPT_INIT) {
+            recolorChatTypedText();
+        }
+    }
 
-	/**
-	 * Initialize after an account is logged in, but not when hopping worlds
-	 *
-	 * @param gameStateChanged GameState changed event object
-	 */
-	@Subscribe
-	public void onGameStateChanged(GameStateChanged gameStateChanged) {
-		switch (gameStateChanged.getGameState()) {
-			case HOPPING:
-				hoppingWorlds = true;
-				break;
-			case LOGGED_IN: {
-				if (hoppingWorlds) {
-					hoppingWorlds = false;
-					return;
-				}
-				shouldInitialize = true;
-			}
-		}
-	}
+    /**
+     * Initialize after an account is logged in, but not when hopping worlds
+     *
+     * @param gameStateChanged GameState changed event object
+     */
+    @Subscribe
+    public void onGameStateChanged(GameStateChanged gameStateChanged) {
+        switch (gameStateChanged.getGameState()) {
+            case HOPPING:
+                hoppingWorlds = true;
+                break;
+            case LOGGED_IN: {
+                if (hoppingWorlds) {
+                    hoppingWorlds = false;
+                    return;
+                }
+                shouldInitialize = true;
+            }
+        }
+    }
 
-	/**
-	 * Initialize the plugin on the game tick after shouldInitialize is set,
-	 * because initialization requires Varbits and VarPlayers to be set
-	 */
-	@Subscribe
-	public void onGameTick(GameTick ignored) {
-		if (!shouldInitialize) {
-			return;
-		}
+    /**
+     * Initialize the plugin on the game tick after shouldInitialize is set,
+     * because initialization requires Varbits and VarPlayers to be set
+     */
+    @Subscribe
+    public void onGameTick(GameTick ignored) {
+        if (!shouldInitialize) {
+            return;
+        }
 
-		selectedChatPanel = ChatPanel.fromInt(client.getVarcIntValue(41));
-		friendsChatChannel = getFriendsChatChannel(
-			client.getFriendsChatManager() != null
-		);
-		configureSlashPrefixes();
-		populateChatChannelColorMap();
-		shouldInitialize = false;
-		recolorChatTypedText();
-	}
+        selectedChatPanel = ChatPanel.fromInt(client.getVarcIntValue(41));
+        friendsChatChannel = getFriendsChatChannel(
+            client.getFriendsChatManager() != null
+        );
+        configureSlashPrefixes();
+        populateChatChannelColorMap();
+        shouldInitialize = false;
+        recolorChatTypedText();
+    }
 
-	/**
-	 * Update chat channel color map when a relevant RL config is changed
-	 *
-	 * @param configChanged Config changed event object
-	 */
-	@Subscribe
-	public void onConfigChanged(ConfigChanged configChanged) {
-		String configGroup = configChanged.getGroup();
-		if (configGroup.equals(SmartChatInputColorPluginConfig.GROUP)) {
-			clientThread.invoke(() -> {
-				configureSlashPrefixes();
-				recolorChatTypedText();
-			});
-		}
+    /**
+     * Update chat channel color map when a relevant RL config is changed
+     *
+     * @param configChanged Config changed event object
+     */
+    @Subscribe
+    public void onConfigChanged(ConfigChanged configChanged) {
+        String configGroup = configChanged.getGroup();
+        if (configGroup.equals(SmartChatInputColorPluginConfig.GROUP)) {
+            clientThread.invoke(() -> {
+                configureSlashPrefixes();
+                recolorChatTypedText();
+            });
+        }
 
-		// TODO: Update the color map with more granularity
-		if (configGroup.equals("textrecolor")) {
-			clientThread.invoke(() -> {
-				populateChatChannelColorMap();
-				recolorChatTypedText();
-			});
-		}
-	}
+        // TODO: Update the color map with more granularity
+        if (configGroup.equals("textrecolor")) {
+            clientThread.invoke(() -> {
+                populateChatChannelColorMap();
+                recolorChatTypedText();
+            });
+        }
+    }
 
-	/**
-	 * Update chat channel color map when a relevant in-game setting is changed
-	 *
-	 * @param varbitChanged Varbit changed event object
-	 */
-	@Subscribe
-	public void onVarbitChanged(VarbitChanged varbitChanged) {
-		// TODO: Update the color map with more granularity
-		@Varp int varPlayerId = varbitChanged.getVarpId();
-		for (ChatChannel channel : ChatChannel.values()) {
-			if (varPlayerId == channel.getOpaqueVarpId() ||
-				varPlayerId == channel.getTransparentVarpId()) {
-				populateChatChannelColorMap();
-				return;
-			}
-		}
-	}
+    /**
+     * Update chat channel color map when a relevant in-game setting is changed
+     *
+     * @param varbitChanged Varbit changed event object
+     */
+    @Subscribe
+    public void onVarbitChanged(VarbitChanged varbitChanged) {
+        // TODO: Update the color map with more granularity
+        @Varp int varPlayerId = varbitChanged.getVarpId();
+        for (ChatChannel channel : ChatChannel.values()) {
+            if (varPlayerId == channel.getOpaqueVarpId() ||
+                varPlayerId == channel.getTransparentVarpId()) {
+                populateChatChannelColorMap();
+                return;
+            }
+        }
+    }
 
-	/**
-	 * Update selected chat panel when a new chat panel is opened
-	 *
-	 * @param varClientIntChanged VarClientInt changed event object
-	 */
-	@Subscribe
-	public void onVarClientIntChanged(VarClientIntChanged varClientIntChanged) {
-		if (varClientIntChanged.getIndex() == 41) {
-			selectedChatPanel = ChatPanel.fromInt(client.getVarcIntValue(41));
-		}
-	}
+    /**
+     * Update selected chat panel when a new chat panel is opened
+     *
+     * @param varClientIntChanged VarClientInt changed event object
+     */
+    @Subscribe
+    public void onVarClientIntChanged(VarClientIntChanged varClientIntChanged) {
+        if (varClientIntChanged.getIndex() == 41) {
+            selectedChatPanel = ChatPanel.fromInt(client.getVarcIntValue(41));
+        }
+    }
 
-	/**
-	 * Update state when client joins or leaves a friends chat,
-	 * and recolor the typed text in case it should change color
-	 *
-	 * @param friendsChatChanged FriendsChat changed event object
-	 */
-	@Subscribe
-	public void onFriendsChatChanged(FriendsChatChanged friendsChatChanged) {
-		friendsChatChannel = getFriendsChatChannel(friendsChatChanged.isJoined());
-		recolorChatTypedText();
-	}
+    /**
+     * Update state when client joins or leaves a friends chat,
+     * and recolor the typed text in case it should change color
+     *
+     * @param friendsChatChanged FriendsChat changed event object
+     */
+    @Subscribe
+    public void onFriendsChatChanged(FriendsChatChanged friendsChatChanged) {
+        friendsChatChannel = getFriendsChatChannel(friendsChatChanged.isJoined());
+        recolorChatTypedText();
+    }
 }
