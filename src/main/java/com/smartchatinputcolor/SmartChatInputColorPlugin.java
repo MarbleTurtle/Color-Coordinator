@@ -1,36 +1,45 @@
 package com.smartchatinputcolor;
 
-import java.awt.*;
-import java.util.HashMap;
-import java.util.Map;
-import javax.inject.Inject;
-
+import com.google.inject.Provides;
 import lombok.extern.slf4j.Slf4j;
-
 import net.runelite.api.*;
 import net.runelite.api.annotations.Varp;
 import net.runelite.api.events.*;
-import net.runelite.api.widgets.*;
+import net.runelite.api.widgets.ComponentID;
+import net.runelite.api.widgets.Widget;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
-
+import net.runelite.client.plugins.PluginManager;
 import net.runelite.client.util.ColorUtil;
 import net.runelite.client.util.Text;
 
+import javax.inject.Inject;
+import java.awt.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+
 @Slf4j
 @PluginDescriptor(
-	name = "Smart Chat Input Color"
+	name = "Smart Chat Input Color",
+	configName = "smart-chat-input-color"
 )
 public class SmartChatInputColorPlugin extends Plugin {
 	@Inject
 	private Client client;
 
 	@Inject
+	private SmartChatInputColorPluginConfig config;
+
+	@Inject
 	private ConfigManager configManager;
+
+	@Inject
+	private PluginManager pluginManager;
 
 	@Inject
 	private ClientThread clientThread;
@@ -42,6 +51,8 @@ public class SmartChatInputColorPlugin extends Plugin {
 	private boolean hoppingWorlds = false;
 
 	private boolean shouldInitialize = false;
+
+	private boolean slashSwapperBug = false;
 
 	private final Map<ChatChannel, Color> channelColorMap = new HashMap<>();
 
@@ -60,6 +71,11 @@ public class SmartChatInputColorPlugin extends Plugin {
 		selectedChatPanel = null;
 		friendsChatChannel = null;
 		channelColorMap.clear();
+	}
+
+	@Provides
+	SmartChatInputColorPluginConfig provideConfig(ConfigManager configManager) {
+		return configManager.getConfig(SmartChatInputColorPluginConfig.class);
 	}
 
 	/**
@@ -105,24 +121,13 @@ public class SmartChatInputColorPlugin extends Plugin {
 	 */
 	private ChatChannel deriveChatChannel(String name, String text) {
 		// First check if the text starts with one of the prefixes
-		if (ChatChannel.GIM.matchesRegex(text)) {
-			return getGIMChatChannel(text);
-		}
-		if (ChatChannel.GUEST.matchesRegex(text)) {
-			return ChatChannel.GUEST;
-		}
-		if (ChatChannel.CLAN.matchesRegex(text)) {
-			return ChatChannel.CLAN;
-		}
-		if (ChatChannel.PUBLIC.matchesRegex(text)) {
-			return ChatChannel.PUBLIC;
-		}
-		// Check FC last. Otherwise, it will match "/" too soon.
-		if (ChatChannel.FRIEND.matchesRegex(text)) {
-			return friendsChatChannel;
+		ChatChannel channel = findChannelByMessagePrefix(text);
+		if (channel != null)
+		{
+			return channel;
 		}
 
-		// If not a prefix, check if in a certain chat mode
+		// If it didn't match a prefix, check if in a certain chat mode
 		if (name.contains("(")) {
 			switch (name.split("\\(")[1].replace(")", "")) {
 				case "channel":
@@ -136,8 +141,38 @@ public class SmartChatInputColorPlugin extends Plugin {
 			}
 		}
 
-		// Text contains no indicators, message is sent to the open chat panel
+		// No indicators from message prefix or chat mode,
+		// so the message will be sent to the open chat panel
 		return getSelectedChatPanelChannel();
+	}
+
+	/**
+	 * Find the channel that a message would be sent to based on the prefix.
+	 *
+	 * @param text Chat message input
+	 * @return Channel that the message would be sent to or null
+	 */
+	private ChatChannel findChannelByMessagePrefix(String text) {
+		// First check if the prefix regex matches
+		for (ChatChannel channel : ChatChannel.values()) {
+			if (!channel.matchesPrefixRegex(text)) {
+				continue;
+			}
+
+			return getResultingChannel(channel, text);
+		}
+
+		// Check the slash prefix if there is no regex match.
+		ChatChannel channel = ChatChannel.getBySlashPrefix(text);
+
+		// If Slash Swapper bug is active and the result is guest chat (///),
+		// return friend instead. Return the result found otherwise.
+		return getResultingChannel(
+			slashSwapperBug && channel == ChatChannel.GUEST
+				? ChatChannel.FRIEND
+				: channel,
+			text
+		);
 	}
 
 	/**
@@ -146,10 +181,7 @@ public class SmartChatInputColorPlugin extends Plugin {
 	 * @param channel Chat channel
 	 * @return Color that the text should be colored for the given chat channel
 	 */
-	private Color computeChannelColor(ChatChannel channel) {
-		boolean transparent = client.isResized() &&
-			client.getVarbitValue(Varbits.TRANSPARENT_CHATBOX) == 1;
-
+	private Color computeChannelColor(ChatChannel channel, boolean transparent) {
 		String colorConfigKey = channel.getColorConfigKey();
 		if (colorConfigKey != null) {
 			Color color = configManager.getConfiguration(
@@ -186,8 +218,10 @@ public class SmartChatInputColorPlugin extends Plugin {
 	 * Update the mapped color for each chat channel
 	 */
 	private void populateChatChannelColorMap() {
-		for (ChatChannel channel : ChatChannel.values()) {
-			channelColorMap.put(channel, computeChannelColor(channel));
+		boolean transparent = client.isResized() &&
+			client.getVarbitValue(Varbits.TRANSPARENT_CHATBOX) == 1;
+		for (ChatChannel c : ChatChannel.values()) {
+			channelColorMap.put(c, computeChannelColor(c, transparent));
 		}
 	}
 
@@ -199,6 +233,41 @@ public class SmartChatInputColorPlugin extends Plugin {
 	 */
 	private ChatChannel getFriendsChatChannel(boolean isInFriendsChat) {
 		return isInFriendsChat ? ChatChannel.FRIEND : ChatChannel.PUBLIC;
+	}
+
+	/**
+	 * Find the resulting channel, keeping in mind whether
+	 * the player is currently in a friends channel
+	 * @param channel Chat channel trying to send the message to
+	 * @return Chat channel that the message will really go to
+	 */
+	private ChatChannel getResultingChannel(ChatChannel channel) {
+		if (channel == null) {
+			return null;
+		}
+
+		return channel == ChatChannel.FRIEND ? friendsChatChannel : channel;
+	}
+
+	/**
+	 * Find the resulting channel, keeping in mind whether the player is
+	 * currently in a friends channel or the player has a GIM account
+	 * @param channel Chat channel trying to send the message to
+	 * @return Chat channel that the message will really go to
+	 */
+	private ChatChannel getResultingChannel(ChatChannel channel, String text) {
+		if (channel == null) {
+			return null;
+		}
+
+		switch (channel) {
+			case FRIEND:
+				return friendsChatChannel;
+			case GIM:
+				return getGIMChatChannel(text);
+			default:
+				return channel;
+		}
 	}
 
 	/**
@@ -218,7 +287,7 @@ public class SmartChatInputColorPlugin extends Plugin {
 		}
 
 		if (text.startsWith("/g")) {
-			return friendsChatChannel;
+			return getResultingChannel(ChatChannel.getBySlashCount(1));
 		}
 
 		if (text.startsWith("/@g")) {
@@ -226,7 +295,7 @@ public class SmartChatInputColorPlugin extends Plugin {
 		}
 
 		if (text.startsWith("////")) {
-			return ChatChannel.GUEST;
+			return getResultingChannel(ChatChannel.getBySlashCount(3));
 		}
 
 		// This never happens because the string passed into this function
@@ -249,6 +318,34 @@ public class SmartChatInputColorPlugin extends Plugin {
 			default:
 				return ChatChannel.PUBLIC;
 		}
+	}
+
+	/**
+	 * Configure up slash prefixes based on whether Slash Swapper is active
+	 */
+	private void configureSlashPrefixes() {
+		Optional<Plugin> maybeSlashSwapper = pluginManager.getPlugins()
+			.stream()
+			.filter(p ->
+				p.getName().equals("Slash Swapper") &&
+					pluginManager.isPluginEnabled(p)
+			)
+			.findFirst();
+
+		if (maybeSlashSwapper.isEmpty()) {
+			slashSwapperBug = false;
+			ChatChannel.defaultSlashPrefixes();
+			return;
+		}
+
+		boolean guestChatConfig = configManager.getConfiguration(
+			"slashswapper",
+			"slashGuestChat",
+			boolean.class
+		);
+		slashSwapperBug = !guestChatConfig && config.slashSwapperBug();
+		ChatChannel.slashSwapperPrefixes(guestChatConfig);
+
 	}
 
 	/**
@@ -291,16 +388,19 @@ public class SmartChatInputColorPlugin extends Plugin {
 	 */
 	@Subscribe
 	public void onGameTick(GameTick ignored) {
-        if (!shouldInitialize) {
-            return;
-        }
+		if (!shouldInitialize) {
+			return;
+		}
 
-        selectedChatPanel = ChatPanel.fromInt(client.getVarcIntValue(41));
-        friendsChatChannel = getFriendsChatChannel(
-            client.getFriendsChatManager() != null
-        );
-        populateChatChannelColorMap();
-    }
+		selectedChatPanel = ChatPanel.fromInt(client.getVarcIntValue(41));
+		friendsChatChannel = getFriendsChatChannel(
+			client.getFriendsChatManager() != null
+		);
+		configureSlashPrefixes();
+		populateChatChannelColorMap();
+		shouldInitialize = false;
+		recolorChatTypedText();
+	}
 
 	/**
 	 * Update chat channel color map when a relevant RL config is changed
@@ -309,16 +409,22 @@ public class SmartChatInputColorPlugin extends Plugin {
 	 */
 	@Subscribe
 	public void onConfigChanged(ConfigChanged configChanged) {
-        if (!configChanged.getGroup().equals("textrecolor")) {
-            return;
-        }
+		String configGroup = configChanged.getGroup();
+		if (configGroup.equals(SmartChatInputColorPluginConfig.GROUP)) {
+			clientThread.invoke(() -> {
+				configureSlashPrefixes();
+				recolorChatTypedText();
+			});
+		}
 
 		// TODO: Update the color map with more granularity
-        clientThread.invoke(() -> {
-            populateChatChannelColorMap();
-            recolorChatTypedText();
-        });
-    }
+		if (configGroup.equals("textrecolor")) {
+			clientThread.invoke(() -> {
+				populateChatChannelColorMap();
+				recolorChatTypedText();
+			});
+		}
+	}
 
 	/**
 	 * Update chat channel color map when a relevant in-game setting is changed
