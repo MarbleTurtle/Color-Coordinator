@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import net.runelite.api.VarPlayer;
 import net.runelite.api.annotations.Varp;
 
+import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -73,23 +74,22 @@ enum ChatChannel {
     private final static Map<Integer, ChatChannel> slashPrefixMap = new HashMap<>();
 
     /**
-     * Set the slash prefixes to their default values.
+     * Set the slash prefixes to their default values
      */
-    public static void defaultSlashPrefixes() {
+    public static void useDefaultSlashPrefixes() {
         slashPrefixMap.clear();
         for (ChatChannel channel : ChatChannel.values()) {
             slashPrefixMap.put(channel.defaultSlashPrefixCount, channel);
         }
-        // Remove public chat
-        slashPrefixMap.remove(0);
+        slashPrefixMap.remove(PUBLIC.defaultSlashPrefixCount);
     }
 
     /**
-     * Configure slash prefixes when Slash Swapper is enabled.
+     * Configure slash prefixes when Slash Swapper is enabled
      *
-     * @param guestChatConfig whether the guest chat config is enabled on Slash Swapper
+     * @param guestChatConfig Whether the guest chat config is enabled on Slash Swapper
      */
-    public static void slashSwapperPrefixes(boolean guestChatConfig) {
+    public static void useSlashSwapperPrefixes(boolean guestChatConfig) {
         slashPrefixMap.clear();
         slashPrefixMap.put(2, FRIEND);
         slashPrefixMap.put(4, GIM);
@@ -104,10 +104,7 @@ enum ChatChannel {
         slashPrefixMap.put(3, GUEST);
     }
 
-    public boolean matchesPrefixRegex(String text) {
-        return prefixRegex.matcher(text).matches();
-    }
-
+    @Nullable
     public static ChatChannel getBySlashPrefix(String text) {
         int slashCount = 0;
         while (slashCount < text.length() && text.charAt(slashCount) == '/') {
@@ -117,7 +114,24 @@ enum ChatChannel {
         return slashPrefixMap.get(Math.min(slashCount, 4));
     }
 
+    /**
+     * Get the chat channel whose slash prefix has the given number of slashes
+     *
+     * @param count Number of slashes
+     * @return Chat channel whose slash prefix has the given number of slashes
+     */
+    @Nullable
     public static ChatChannel getBySlashCount(int count) {
         return slashPrefixMap.get(count);
+    }
+
+    /**
+     * Check if the input text matches this channel's prefix regex
+     *
+     * @param text Input text
+     * @return Whether the text matches this channel's prefix regex
+     */
+    public boolean matchesPrefixRegex(String text) {
+        return prefixRegex.matcher(text).matches();
     }
 }
