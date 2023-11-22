@@ -457,10 +457,11 @@ public class SmartChatInputColorPlugin extends Plugin {
             ChatChannel.useSlashSwapperPrefixes(
                 getSlashSwapperGuestChatConfig()
             );
-            return;
+        } else {
+            ChatChannel.useDefaultSlashPrefixes();
         }
 
-        ChatChannel.useDefaultSlashPrefixes();
+        recolorChatTypedText();
     }
 
     /**
