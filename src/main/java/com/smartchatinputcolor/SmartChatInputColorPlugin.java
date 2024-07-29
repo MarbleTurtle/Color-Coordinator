@@ -101,7 +101,8 @@ public class SmartChatInputColorPlugin extends Plugin {
             return;
         }
 
-        String name = (input.contains(":") ? input.split(":")[0] : player.getName());
+        String[] splitInput = input.split(":", 1);
+        String name = splitInput.length == 2 ? splitInput[0] : player.getName();
         String typedText = client.getVarcStrValue(VarClientStr.CHATBOX_TYPED_TEXT);
         Color chatColor = channelColorMap.get(deriveChatChannel(name, typedText));
         inputWidget.setText(name + ": " + ColorUtil.wrapWithColorTag(Text.escapeJagex(typedText) + "*", chatColor));
@@ -122,8 +123,9 @@ public class SmartChatInputColorPlugin extends Plugin {
         }
 
         // If it didn't match a prefix, check if in a certain chat mode
-        if (name.contains("(")) {
-            switch (name.split("\\(")[1].replace(")", "")) {
+        String[] nameParts = name.split("\\(");
+        if (nameParts.length == 2) {
+            switch (nameParts[1].replace(")", "")) {
                 case "channel":
                     return friendsChatChannel;
                 case "clan":
