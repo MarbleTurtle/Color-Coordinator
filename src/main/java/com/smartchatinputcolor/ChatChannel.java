@@ -61,7 +61,9 @@ enum ChatChannel {
     );
 
     private final String colorConfigKey;
+    @Getter(onMethod_ = {@Varp})
     private final @Varp int transparentVarpId;
+    @Getter(onMethod_ = {@Varp})
     private final @Varp int opaqueVarpId;
     private final int transparentDefaultRgb;
     private final int opaqueDefaultRgb;

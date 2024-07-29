@@ -392,7 +392,6 @@ public class SmartChatInputColorPlugin extends Plugin {
             });
         }
 
-        // TODO: Update the color map with more granularity
         if (configGroup.equals("textrecolor")) {
             clientThread.invoke(() -> {
                 populateChatChannelColorMap();
