@@ -11,11 +11,9 @@ public interface SmartChatInputColorPluginConfig extends Config {
     @ConfigItem(
         keyName = "slashSwapperBug",
         name = "Slash Swapper bug",
-        description = "Assume that messages starting with /// are sent " +
-            "to friends chat if Slash Swapper is active without swap guest " +
-            "chat config enabled.",
-        position = 1
-    )
+        description = "Assume that messages starting with /// are sent to friends chat "
+            + "if Slash Swapper is active without swap guest chat config enabled.",
+        position = 1)
     default boolean slashSwapperBug() {
         return true;
     }
