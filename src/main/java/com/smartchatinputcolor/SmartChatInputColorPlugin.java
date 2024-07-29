@@ -158,9 +158,12 @@ public class SmartChatInputColorPlugin extends Plugin {
         // Check the slash prefix if there is no regex match
         ChatChannel channel = ChatChannel.getBySlashPrefix(text);
 
-        // If Slash Swapper bug is active and the result is guest chat (///), return friend instead
-        return getResultingChannel(
-            slashSwapperBug && channel == ChatChannel.GUEST ? ChatChannel.FRIEND : channel, text);
+        // If Slash Swapper bug is active and the result is guest chat (///) or GIM chat (////), return friend instead
+        if (slashSwapperBug && (channel == ChatChannel.GUEST || channel == ChatChannel.GIM)) {
+            channel = ChatChannel.FRIEND;
+        }
+
+        return getResultingChannel(channel, text);
     }
 
     /**
