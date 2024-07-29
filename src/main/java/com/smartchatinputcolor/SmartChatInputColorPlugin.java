@@ -430,7 +430,13 @@ public class SmartChatInputColorPlugin extends Plugin {
      */
     @Subscribe
     public void onVarbitChanged(VarbitChanged varbitChanged) {
-        // TODO: Shut IntelliJ up about magic constant while preserving the static analysis on Varps
+        // Check if the setting for transparent chat box changed
+        if (varbitChanged.getVarbitId() == Varbits.TRANSPARENT_CHATBOX) {
+            populateChatChannelColorMap();
+            return;
+        }
+
+        // Check if any of the chat channel colours was changed
         @Varp int varPlayerId = varbitChanged.getVarpId();
         for (ChatChannel channel : ChatChannel.values()) {
             if (varPlayerId == channel.getOpaqueVarpId() || varPlayerId == channel.getTransparentVarpId()) {
