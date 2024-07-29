@@ -179,17 +179,14 @@ public class SmartChatInputColorPlugin extends Plugin {
             }
         }
 
-        // TODO: Shut IntelliJ up about magic constant while preserving the static analysis on Varps
-        int colorCode = client.getVarpValue(transparent ? channel.getTransparentVarpId() : channel.getOpaqueVarpId())
-            - 1;
+        int colorCode = client.getVarpValue(transparent ? channel.getTransparentVarpId() : channel.getOpaqueVarpId());
+        // Zero means there is no value set, return the default value for this channel
         if (colorCode == 0) {
-            return Color.BLACK;
-        }
-        if (colorCode == -1) {
             return new Color(transparent ? channel.getTransparentDefaultRgb() : channel.getOpaqueDefaultRgb());
         }
 
-        return new Color(colorCode);
+        // Color code saved in the varp is offset by 1
+        return new Color(colorCode - 1);
     }
 
     /**
