@@ -309,12 +309,16 @@ public class SmartChatInputColorPlugin extends Plugin {
             .filter(p -> p.getName().equals("Slash Swapper") && pluginManager.isPluginEnabled(p))
             .findFirst();
 
-        if (maybeSlashSwapper.isEmpty()) {
-            slashSwapperBug = false;
-            ChatChannel.useDefaultSlashPrefixes();
+        if (maybeSlashSwapper.isPresent()) {
+            useSlashSwapperPrefixes();
             return;
         }
 
+        slashSwapperBug = false;
+        ChatChannel.useDefaultSlashPrefixes();
+    }
+
+    private void useSlashSwapperPrefixes() {
         boolean guestChatConfig = getSlashSwapperGuestChatConfig();
         slashSwapperBug = !guestChatConfig && config.slashSwapperBug();
         ChatChannel.useSlashSwapperPrefixes(guestChatConfig);
@@ -407,8 +411,9 @@ public class SmartChatInputColorPlugin extends Plugin {
         }
 
         if (pluginManager.isPluginEnabled(plugin)) {
-            ChatChannel.useSlashSwapperPrefixes(getSlashSwapperGuestChatConfig());
+            useSlashSwapperPrefixes();
         } else {
+            slashSwapperBug = false;
             ChatChannel.useDefaultSlashPrefixes();
         }
 
