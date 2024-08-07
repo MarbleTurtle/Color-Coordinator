@@ -175,7 +175,7 @@ public class SmartChatInputColorPlugin extends Plugin {
         int colorCode = client.getVarpValue(transparent ? channel.getTransparentVarpId() : channel.getOpaqueVarpId());
         // Zero means there is no value set, return the default value for this channel
         if (colorCode == 0) {
-            return new Color(transparent ? channel.getTransparentDefaultRgb() : channel.getOpaqueDefaultRgb());
+            return transparent ? channel.getTransparentDefaultColor() : channel.getOpaqueDefaultColor();
         }
 
         // Color code saved in the varp is offset by 1

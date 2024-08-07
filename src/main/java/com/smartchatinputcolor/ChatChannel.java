@@ -5,8 +5,10 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import net.runelite.api.VarPlayer;
 import net.runelite.api.annotations.Varp;
+import net.runelite.client.ui.JagexColors;
 
 import javax.annotation.Nullable;
+import java.awt.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -18,8 +20,8 @@ enum ChatChannel {
         "PublicChat",
         VarPlayer.SETTINGS_TRANSPARENT_CHAT_PUBLIC,
         VarPlayer.SETTINGS_OPAQUE_CHAT_PUBLIC,
-        0x9090FF,
-        0x0000FF,
+        JagexColors.CHAT_TYPED_TEXT_TRANSPARENT_BACKGROUND,
+        JagexColors.CHAT_TYPED_TEXT_OPAQUE_BACKGROUND,
         Pattern.compile("^/(@p|p ).*"),
         0
     ),
@@ -27,8 +29,8 @@ enum ChatChannel {
         "ClanChatMessage",
         VarPlayer.SETTINGS_TRANSPARENT_CHAT_FRIEND,
         VarPlayer.SETTINGS_OPAQUE_CHAT_FRIEND,
-        0xEF5050,
-        0x7F0000,
+        JagexColors.CHAT_FC_TEXT_TRANSPARENT_BACKGROUND,
+        JagexColors.CHAT_FC_TEXT_OPAQUE_BACKGROUND,
         Pattern.compile("^/(@?f).*"),
         1
     ),
@@ -36,8 +38,8 @@ enum ChatChannel {
         "ClanMessage",
         VarPlayer.SETTINGS_TRANSPARENT_CHAT_CLAN,
         VarPlayer.SETTINGS_OPAQUE_CHAT_CLAN,
-        0x7F0000,
-        0x7F0000,
+        DefaultColors.CLAN_AND_GIM,
+        DefaultColors.CLAN_AND_GIM,
         Pattern.compile("^/(@c|c ).*"),
         2
     ),
@@ -45,8 +47,8 @@ enum ChatChannel {
         "ClanGuestMessage",
         VarPlayer.SETTINGS_TRANSPARENT_CHAT_GUEST_CLAN,
         VarPlayer.SETTINGS_OPAQUE_CHAT_GUEST_CLAN,
-        0x7F0000,
-        0x7F0000,
+        DefaultColors.GUEST_CLAN_TRANSPARENT,
+        DefaultColors.GUEST_CLAN_OPAQUE,
         Pattern.compile("^/(@gc|gc ).*"),
         3
     ),
@@ -54,8 +56,8 @@ enum ChatChannel {
         null,
         VarPlayer.SETTINGS_TRANSPARENT_CHAT_IRON_GROUP_CHAT,
         VarPlayer.SETTINGS_OPAQUE_CHAT_IRON_GROUP_CHAT,
-        0x7F0000,
-        0x7F0000,
+        DefaultColors.CLAN_AND_GIM,
+        DefaultColors.CLAN_AND_GIM,
         Pattern.compile("^/(@g[^c]|g ).*"),
         4
     );
@@ -65,8 +67,8 @@ enum ChatChannel {
     private final @Varp int transparentVarpId;
     @Getter(onMethod_ = {@Varp})
     private final @Varp int opaqueVarpId;
-    private final int transparentDefaultRgb;
-    private final int opaqueDefaultRgb;
+    private final Color transparentDefaultColor;
+    private final Color opaqueDefaultColor;
 
     @Getter(AccessLevel.NONE)
     private final Pattern prefixRegex;
@@ -128,7 +130,6 @@ enum ChatChannel {
     }
 
     /**
-     *
      * @param chatModeVarClientIntValue VarClientInt value
      * @return Current chat mode channel
      */
