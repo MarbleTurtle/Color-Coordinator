@@ -149,7 +149,7 @@ public class SmartChatInputColorPlugin extends Plugin {
         ChatChannel channel = ChatChannel.fromSlashPrefix(text);
 
         // If Slash Swapper bug is active and the result is guest chat (///) or GIM chat (////), return friend instead
-        if (slashSwapperBug && (channel == ChatChannel.GUEST || channel == ChatChannel.GIM)) {
+        if (slashSwapperBug && (channel == ChatChannel.GUEST || channel == ChatChannel.GIM && !isGroupIronman())) {
             channel = ChatChannel.FRIEND;
         }
 
@@ -203,7 +203,7 @@ public class SmartChatInputColorPlugin extends Plugin {
      * Set the currently opened chat panel
      */
     private void setOpenChatPanel() {
-        selectedChatPanel = ChatPanel.fromInt(client.getVarcIntValue(OPEN_CHAT_PANEL));
+        selectedChatPanel = ChatPanel.fromVarClientInt(client.getVarcIntValue(OPEN_CHAT_PANEL));
     }
 
     /**
@@ -250,11 +250,8 @@ public class SmartChatInputColorPlugin extends Plugin {
      * @return Chat channel that the message will go to
      */
     private ChatChannel getGIMChatChannel(String text) {
-        switch (client.getVarbitValue(Varbits.ACCOUNT_TYPE)) {
-            case 4: // GIM
-            case 5: // HCGIM
-            case 6: // UGIM
-                return ChatChannel.GIM;
+        if (isGroupIronman()) {
+            return ChatChannel.GIM;
         }
 
         if (text.startsWith("/g")) {
@@ -285,9 +282,21 @@ public class SmartChatInputColorPlugin extends Plugin {
                 return friendsChatChannel;
             case CLAN:
                 return ChatChannel.CLAN;
-            default:
-                return ChatChannel.PUBLIC;
+            case TRADE_OR_GIM:
+                return isGroupIronman() ? ChatChannel.GIM : ChatChannel.PUBLIC;
         }
+
+        return ChatChannel.PUBLIC;
+    }
+
+    private boolean isGroupIronman() {
+        switch (client.getVarbitValue(Varbits.ACCOUNT_TYPE)) {
+            case 4: // GIM
+            case 5: // HCGIM
+            case 6: // UGIM
+                return true;
+        }
+        return false;
     }
 
     private boolean getSlashSwapperGuestChatConfig() {

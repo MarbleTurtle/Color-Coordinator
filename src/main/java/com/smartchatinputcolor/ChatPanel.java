@@ -13,13 +13,13 @@ enum ChatPanel {
     PRIVATE(3),
     CHANNEL(4),
     CLAN(5),
-    TRADE(6);
+    TRADE_OR_GIM(6);
 
-    private final int id;
+    private final int varClientIntValue;
 
-    public static ChatPanel fromInt(int value) {
+    public static ChatPanel fromVarClientInt(int varClientIntValue) {
         for (ChatPanel chatPanel : ChatPanel.values()) {
-            if (chatPanel.id == value) {
+            if (chatPanel.varClientIntValue == varClientIntValue) {
                 return chatPanel;
             }
         }
