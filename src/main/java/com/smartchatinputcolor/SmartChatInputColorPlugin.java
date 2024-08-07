@@ -19,11 +19,11 @@ import net.runelite.client.plugins.PluginManager;
 import net.runelite.client.util.ColorUtil;
 import net.runelite.client.util.Text;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import java.awt.*;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 @Slf4j
 @PluginDescriptor(name = "Smart Chat Input Color")
@@ -212,6 +212,7 @@ public class SmartChatInputColorPlugin extends Plugin {
      * @param channel Chat channel trying to send the message to
      * @return Chat channel that the message will really go to
      */
+    @Nullable
     private ChatChannel getResultingChannel(ChatChannel channel) {
         if (channel == null) {
             return null;
@@ -226,6 +227,7 @@ public class SmartChatInputColorPlugin extends Plugin {
      * @param channel Chat channel trying to send the message to
      * @return Chat channel that the message will really go to
      */
+    @Nullable
     private ChatChannel getResultingChannel(ChatChannel channel, String text) {
         if (channel == null) {
             return null;
@@ -296,13 +298,12 @@ public class SmartChatInputColorPlugin extends Plugin {
      * Configure up slash prefixes based on whether Slash Swapper is active
      */
     private void configureSlashPrefixes() {
-        Optional<Plugin> maybeSlashSwapper = pluginManager
+        boolean slashSwapperEnabled = pluginManager
             .getPlugins()
             .stream()
-            .filter(p -> p.getName().equals("Slash Swapper") && pluginManager.isPluginEnabled(p))
-            .findFirst();
+            .anyMatch(p -> p.getName().equals("Slash Swapper") && pluginManager.isPluginEnabled(p));
 
-        if (maybeSlashSwapper.isPresent()) {
+        if (slashSwapperEnabled) {
             useSlashSwapperPrefixes();
             return;
         }
