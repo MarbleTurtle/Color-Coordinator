@@ -107,7 +107,7 @@ enum ChatChannel {
     }
 
     @Nullable
-    public static ChatChannel getBySlashPrefix(String text) {
+    public static ChatChannel fromSlashPrefix(String text) {
         int slashCount = 0;
         while (slashCount < text.length() && text.charAt(slashCount) == '/') {
             slashCount++;
@@ -123,8 +123,29 @@ enum ChatChannel {
      * @return Chat channel whose slash prefix has the given number of slashes
      */
     @Nullable
-    public static ChatChannel getBySlashCount(int count) {
+    public static ChatChannel fromSlashCount(int count) {
         return slashPrefixMap.get(count);
+    }
+
+    /**
+     *
+     * @param chatModeVarClientIntValue VarClientInt value
+     * @return Current chat mode channel
+     */
+    @Nullable
+    public static ChatChannel fromChatModeVarClientInt(int chatModeVarClientIntValue) {
+        switch (chatModeVarClientIntValue) {
+            case 1:
+                return FRIEND;
+            case 2:
+                return CLAN;
+            case 3:
+                return GUEST;
+            case 4:
+                return GIM;
+        }
+
+        return null;
     }
 
     /**

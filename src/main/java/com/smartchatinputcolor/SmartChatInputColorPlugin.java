@@ -29,7 +29,10 @@ import java.util.Optional;
 @PluginDescriptor(name = "Smart Chat Input Color")
 public class SmartChatInputColorPlugin extends Plugin {
     @VarCInt
-    private static final int OPEN_CHAT_PANEL = 41;
+    static final int OPEN_CHAT_PANEL = 41;
+
+    @VarCInt
+    static final int CHAT_MODE = 945;
 
     @Inject
     private Client client;
@@ -95,27 +98,23 @@ public class SmartChatInputColorPlugin extends Plugin {
             return;
         }
 
-        // Get player, is null when just logging in, so check and abort
-        Player player = client.getLocalPlayer();
-        if (player == null) {
+        int colonIndex = input.indexOf(':');
+        if (colonIndex == -1) {
             return;
         }
-
-        String[] splitInput = input.split(":", 1);
-        String name = splitInput.length == 2 ? splitInput[0] : player.getName();
+        String name = input.substring(0, colonIndex);
         String typedText = client.getVarcStrValue(VarClientStr.CHATBOX_TYPED_TEXT);
-        Color chatColor = channelColorMap.get(deriveChatChannel(name, typedText));
+        Color chatColor = channelColorMap.get(deriveChatChannel(typedText));
         inputWidget.setText(name + ": " + ColorUtil.wrapWithColorTag(Text.escapeJagex(typedText) + "*", chatColor));
     }
 
     /**
      * Decide which channel color the input text should get
      *
-     * @param name Chat prefix (player name, or active chat mode)
      * @param text Chat input text typed by the player
      * @return Chat channel whose color the input text should be recolored to
      */
-    private ChatChannel deriveChatChannel(String name, String text) {
+    private ChatChannel deriveChatChannel(String text) {
         // First check if the text starts with one of the prefixes
         ChatChannel channel = findChannelByMessagePrefix(text);
         if (channel != null) {
@@ -123,18 +122,9 @@ public class SmartChatInputColorPlugin extends Plugin {
         }
 
         // If it didn't match a prefix, check if in a certain chat mode
-        String[] nameParts = name.split("\\(");
-        if (nameParts.length == 2) {
-            switch (nameParts[1].replace(")", "")) {
-                case "channel":
-                    return friendsChatChannel;
-                case "clan":
-                    return ChatChannel.CLAN;
-                case "guest clan":
-                    return ChatChannel.GUEST;
-                case "group":
-                    return ChatChannel.GIM;
-            }
+        channel = ChatChannel.fromChatModeVarClientInt(client.getVarcIntValue(CHAT_MODE));
+        if (channel != null) {
+            return channel;
         }
 
         // No indicators from message prefix or chat mode, so the message will be sent to the open chat panel
@@ -156,7 +146,7 @@ public class SmartChatInputColorPlugin extends Plugin {
         }
 
         // Check the slash prefix if there is no regex match
-        ChatChannel channel = ChatChannel.getBySlashPrefix(text);
+        ChatChannel channel = ChatChannel.fromSlashPrefix(text);
 
         // If Slash Swapper bug is active and the result is guest chat (///) or GIM chat (////), return friend instead
         if (slashSwapperBug && (channel == ChatChannel.GUEST || channel == ChatChannel.GIM)) {
@@ -266,7 +256,7 @@ public class SmartChatInputColorPlugin extends Plugin {
         }
 
         if (text.startsWith("/g")) {
-            return getResultingChannel(ChatChannel.getBySlashCount(1));
+            return getResultingChannel(ChatChannel.fromSlashCount(1));
         }
 
         if (text.startsWith("/@g")) {
@@ -274,7 +264,7 @@ public class SmartChatInputColorPlugin extends Plugin {
         }
 
         if (text.startsWith("////")) {
-            return getResultingChannel(ChatChannel.getBySlashCount(3));
+            return getResultingChannel(ChatChannel.fromSlashCount(3));
         }
 
         // This never happens because the string passed into this function
