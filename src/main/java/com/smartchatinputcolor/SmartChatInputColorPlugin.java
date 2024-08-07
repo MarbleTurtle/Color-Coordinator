@@ -1,5 +1,6 @@
 package com.smartchatinputcolor;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Provides;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
@@ -28,9 +29,12 @@ import java.util.Map;
 @Slf4j
 @PluginDescriptor(name = "Smart Chat Input Color")
 public class SmartChatInputColorPlugin extends Plugin {
+
+    @VisibleForTesting
     @VarCInt
     static final int OPEN_CHAT_PANEL = 41;
 
+    @VisibleForTesting
     @VarCInt
     static final int CHAT_MODE = 945;
 
@@ -114,7 +118,8 @@ public class SmartChatInputColorPlugin extends Plugin {
      * @param text Chat input text typed by the player
      * @return Chat channel whose color the input text should be recolored to
      */
-    private ChatChannel deriveChatChannel(String text) {
+    @VisibleForTesting
+    ChatChannel deriveChatChannel(String text) {
         // First check if the text starts with one of the prefixes
         ChatChannel channel = findChannelByMessagePrefix(text);
         if (channel != null) {
