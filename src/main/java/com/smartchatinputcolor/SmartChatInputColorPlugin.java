@@ -7,7 +7,8 @@ import net.runelite.api.*;
 import net.runelite.api.annotations.VarCInt;
 import net.runelite.api.annotations.Varp;
 import net.runelite.api.events.*;
-import net.runelite.api.widgets.ComponentID;
+import net.runelite.api.gameval.InterfaceID;
+import net.runelite.api.gameval.VarbitID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
@@ -91,7 +92,7 @@ public class SmartChatInputColorPlugin extends Plugin {
      * Recolor the text typed in the chat, based on the channel that the message will be sent to
      */
     private void recolorChatTypedText() {
-        Widget inputWidget = client.getWidget(ComponentID.CHATBOX_INPUT);
+        Widget inputWidget = client.getWidget(InterfaceID.Chatbox.INPUT);
         if (inputWidget == null) {
             return;
         }
@@ -191,7 +192,7 @@ public class SmartChatInputColorPlugin extends Plugin {
      * Update the mapped color for each chat channel
      */
     private void populateChatChannelColorMap() {
-        boolean transparent = client.isResized() && client.getVarbitValue(Varbits.TRANSPARENT_CHATBOX) == 1;
+        boolean transparent = client.isResized() && client.getVarbitValue(VarbitID.CHATBOX_TRANSPARENCY) == 1;
         for (ChatChannel c : ChatChannel.values()) {
             channelColorMap.put(c, computeChannelColor(c, transparent));
         }
@@ -295,7 +296,7 @@ public class SmartChatInputColorPlugin extends Plugin {
     }
 
     private boolean isGroupIronman() {
-        switch (client.getVarbitValue(Varbits.ACCOUNT_TYPE)) {
+        switch (client.getVarbitValue(VarbitID.IRONMAN)) {
             case 4: // GIM
             case 5: // HCGIM
             case 6: // UGIM
@@ -435,7 +436,7 @@ public class SmartChatInputColorPlugin extends Plugin {
     @Subscribe
     public void onVarbitChanged(VarbitChanged varbitChanged) {
         // Check if the setting for transparent chat box changed
-        if (varbitChanged.getVarbitId() == Varbits.TRANSPARENT_CHATBOX) {
+        if (varbitChanged.getVarbitId() == VarbitID.CHATBOX_TRANSPARENCY) {
             populateChatChannelColorMap();
             return;
         }

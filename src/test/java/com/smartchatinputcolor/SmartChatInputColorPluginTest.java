@@ -6,8 +6,8 @@ import com.google.inject.testing.fieldbinder.BoundFieldModule;
 import net.runelite.api.Client;
 import net.runelite.api.FriendsChatManager;
 import net.runelite.api.GameState;
-import net.runelite.api.Varbits;
 import net.runelite.api.events.GameTick;
+import net.runelite.api.gameval.VarbitID;
 import net.runelite.client.RuneLite;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.externalplugins.ExternalPluginManager;
@@ -70,7 +70,7 @@ public class SmartChatInputColorPluginTest {
             .thenReturn(state.getChatMode().ordinal());
 
         // Group Ironman account
-        when(client.getVarbitValue(Varbits.ACCOUNT_TYPE)).thenReturn(state.isGroupIronman() ? 4 : 0);
+        when(client.getVarbitValue(VarbitID.IRONMAN)).thenReturn(state.isGroupIronman() ? 4 : 0);
 
         // Always logged in while testing
         when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
@@ -82,7 +82,7 @@ public class SmartChatInputColorPluginTest {
         // Using a transparent chatbox, doesn't matter for current testing
         // since we only test the channel output, not the actual color
         when(client.isResized()).thenReturn(true);
-        when(client.getVarbitValue(Varbits.TRANSPARENT_CHATBOX)).thenReturn(1);
+        when(client.getVarbitValue(VarbitID.CHATBOX_TRANSPARENCY)).thenReturn(1);
 
 
         // Mock the plugin manager
