@@ -3,7 +3,10 @@ package com.smartchatinputcolor;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Provides;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.*;
+import net.runelite.api.Client;
+import net.runelite.api.GameState;
+import net.runelite.api.ScriptID;
+import net.runelite.api.VarClientStr;
 import net.runelite.api.annotations.Varp;
 import net.runelite.api.events.*;
 import net.runelite.api.gameval.InterfaceID;
@@ -113,19 +116,25 @@ public class SmartChatInputColorPlugin extends Plugin {
     @VisibleForTesting
     ChatChannel deriveChatChannel(String text) {
         // First check if the text starts with one of the prefixes
-        ChatChannel channel = findChannelByMessagePrefix(text);
-        if (channel != null) {
-            return channel;
+        ChatChannel messagePrefixChannel = findChannelByMessagePrefix(text);
+        if (messagePrefixChannel != null) {
+            return messagePrefixChannel;
+        }
+
+        ChatChannel chatPanelChannel = getSelectedChatPanelChannel();
+        if (chatPanelChannel != ChatChannel.PUBLIC) {
+            return chatPanelChannel;
         }
 
         // If it didn't match a prefix, check if in a certain chat mode
-        channel = ChatChannel.fromChatModeVarClientInt(client.getVarcIntValue(VarClientInt.ACTIVE_CHAT_MODE));
-        if (channel != null) {
-            return channel;
+        int activeChatMode = client.getVarcIntValue(VarClientInt.ACTIVE_CHAT_MODE);
+        ChatChannel chatModeChannel = ChatChannel.fromChatModeVarClientInt(activeChatMode);
+        if (chatModeChannel != null) {
+            return chatModeChannel;
         }
 
-        // No indicators from message prefix or chat mode, so the message will be sent to the open chat panel
-        return getSelectedChatPanelChannel();
+        // This message isn't going anywhere according to the checks, send it to public by default
+        return ChatChannel.PUBLIC;
     }
 
     /**

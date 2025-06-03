@@ -519,6 +519,19 @@ public class SmartChatInputColorPluginTest {
     }
     //endregion
 
+    @Test
+    public void testClanTabInFriendsChatMode() {
+        setupState(new ClientState(
+            false,
+            false,
+            SlashSwapperMode.OFF,
+            ChatPanel.CLAN,
+            ChatChannel.FRIEND
+        ));
+
+        assertSlash(0, ChatChannel.CLAN);
+    }
+
     public static void main(String[] args) throws Exception {
         @SuppressWarnings("unchecked")
         var plugins = (Class<? extends Plugin>[]) new Class[]{SmartChatInputColorPlugin.class};
