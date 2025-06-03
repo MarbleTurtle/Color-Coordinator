@@ -58,7 +58,7 @@ public class SmartChatInputColorPluginTest {
         // Mock the client
 
         // Currently opened chat panel
-        when(client.getVarcIntValue(SmartChatInputColorPlugin.OPEN_CHAT_PANEL))
+        when(client.getVarcIntValue(VarClientInt.OPEN_CHAT_PANEL))
             .thenReturn(state.getOpenChatPanel().getVarClientIntValue());
 
         // In a friends chat or not?
@@ -66,7 +66,7 @@ public class SmartChatInputColorPluginTest {
             .thenReturn(state.isInFriendsChat() ? mock(FriendsChatManager.class) : null);
 
         // Current chat mode, ordinals are the same as the var client int value
-        when(client.getVarcIntValue(SmartChatInputColorPlugin.CHAT_MODE))
+        when(client.getVarcIntValue(VarClientInt.ACTIVE_CHAT_MODE))
             .thenReturn(state.getChatMode().ordinal());
 
         // Group Ironman account

@@ -4,7 +4,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Provides;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
-import net.runelite.api.annotations.VarCInt;
 import net.runelite.api.annotations.Varp;
 import net.runelite.api.events.*;
 import net.runelite.api.gameval.InterfaceID;
@@ -30,14 +29,6 @@ import java.util.Map;
 @Slf4j
 @PluginDescriptor(name = "Smart Chat Input Color")
 public class SmartChatInputColorPlugin extends Plugin {
-
-    @VisibleForTesting
-    @VarCInt
-    static final int OPEN_CHAT_PANEL = 41;
-
-    @VisibleForTesting
-    @VarCInt
-    static final int CHAT_MODE = 945;
 
     @Inject
     private Client client;
@@ -128,7 +119,7 @@ public class SmartChatInputColorPlugin extends Plugin {
         }
 
         // If it didn't match a prefix, check if in a certain chat mode
-        channel = ChatChannel.fromChatModeVarClientInt(client.getVarcIntValue(CHAT_MODE));
+        channel = ChatChannel.fromChatModeVarClientInt(client.getVarcIntValue(VarClientInt.ACTIVE_CHAT_MODE));
         if (channel != null) {
             return channel;
         }
@@ -209,7 +200,7 @@ public class SmartChatInputColorPlugin extends Plugin {
      * Set the currently opened chat panel
      */
     private void setOpenChatPanel() {
-        selectedChatPanel = ChatPanel.fromVarClientInt(client.getVarcIntValue(OPEN_CHAT_PANEL));
+        selectedChatPanel = ChatPanel.fromVarClientInt(client.getVarcIntValue(VarClientInt.OPEN_CHAT_PANEL));
     }
 
     /**
@@ -458,7 +449,7 @@ public class SmartChatInputColorPlugin extends Plugin {
      */
     @Subscribe
     public void onVarClientIntChanged(VarClientIntChanged varClientIntChanged) {
-        if (varClientIntChanged.getIndex() == OPEN_CHAT_PANEL) {
+        if (varClientIntChanged.getIndex() == VarClientInt.OPEN_CHAT_PANEL) {
             setOpenChatPanel();
         }
     }
