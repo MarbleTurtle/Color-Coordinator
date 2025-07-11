@@ -3,11 +3,14 @@ package com.smartchatinputcolor;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Provides;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.*;
-import net.runelite.api.annotations.VarCInt;
+import net.runelite.api.Client;
+import net.runelite.api.GameState;
+import net.runelite.api.ScriptID;
+import net.runelite.api.VarClientStr;
 import net.runelite.api.annotations.Varp;
 import net.runelite.api.events.*;
-import net.runelite.api.widgets.ComponentID;
+import net.runelite.api.gameval.InterfaceID;
+import net.runelite.api.gameval.VarbitID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
@@ -29,14 +32,6 @@ import java.util.Map;
 @Slf4j
 @PluginDescriptor(name = "Smart Chat Input Color")
 public class SmartChatInputColorPlugin extends Plugin {
-
-    @VisibleForTesting
-    @VarCInt
-    static final int OPEN_CHAT_PANEL = 41;
-
-    @VisibleForTesting
-    @VarCInt
-    static final int CHAT_MODE = 945;
 
     @Inject
     private Client client;
@@ -91,7 +86,7 @@ public class SmartChatInputColorPlugin extends Plugin {
      * Recolor the text typed in the chat, based on the channel that the message will be sent to
      */
     private void recolorChatTypedText() {
-        Widget inputWidget = client.getWidget(ComponentID.CHATBOX_INPUT);
+        Widget inputWidget = client.getWidget(InterfaceID.Chatbox.INPUT);
         if (inputWidget == null) {
             return;
         }
@@ -121,19 +116,25 @@ public class SmartChatInputColorPlugin extends Plugin {
     @VisibleForTesting
     ChatChannel deriveChatChannel(String text) {
         // First check if the text starts with one of the prefixes
-        ChatChannel channel = findChannelByMessagePrefix(text);
-        if (channel != null) {
-            return channel;
+        ChatChannel messagePrefixChannel = findChannelByMessagePrefix(text);
+        if (messagePrefixChannel != null) {
+            return messagePrefixChannel;
+        }
+
+        ChatChannel chatPanelChannel = getSelectedChatPanelChannel();
+        if (chatPanelChannel != ChatChannel.PUBLIC) {
+            return chatPanelChannel;
         }
 
         // If it didn't match a prefix, check if in a certain chat mode
-        channel = ChatChannel.fromChatModeVarClientInt(client.getVarcIntValue(CHAT_MODE));
-        if (channel != null) {
-            return channel;
+        int activeChatMode = client.getVarcIntValue(VarClientInt.ACTIVE_CHAT_MODE);
+        ChatChannel chatModeChannel = ChatChannel.fromChatModeVarClientInt(activeChatMode);
+        if (chatModeChannel != null) {
+            return chatModeChannel;
         }
 
-        // No indicators from message prefix or chat mode, so the message will be sent to the open chat panel
-        return getSelectedChatPanelChannel();
+        // This message isn't going anywhere according to the checks, send it to public by default
+        return ChatChannel.PUBLIC;
     }
 
     /**
@@ -191,7 +192,7 @@ public class SmartChatInputColorPlugin extends Plugin {
      * Update the mapped color for each chat channel
      */
     private void populateChatChannelColorMap() {
-        boolean transparent = client.isResized() && client.getVarbitValue(Varbits.TRANSPARENT_CHATBOX) == 1;
+        boolean transparent = client.isResized() && client.getVarbitValue(VarbitID.CHATBOX_TRANSPARENCY) == 1;
         for (ChatChannel c : ChatChannel.values()) {
             channelColorMap.put(c, computeChannelColor(c, transparent));
         }
@@ -208,7 +209,7 @@ public class SmartChatInputColorPlugin extends Plugin {
      * Set the currently opened chat panel
      */
     private void setOpenChatPanel() {
-        selectedChatPanel = ChatPanel.fromVarClientInt(client.getVarcIntValue(OPEN_CHAT_PANEL));
+        selectedChatPanel = ChatPanel.fromVarClientInt(client.getVarcIntValue(VarClientInt.OPEN_CHAT_PANEL));
     }
 
     /**
@@ -295,7 +296,7 @@ public class SmartChatInputColorPlugin extends Plugin {
     }
 
     private boolean isGroupIronman() {
-        switch (client.getVarbitValue(Varbits.ACCOUNT_TYPE)) {
+        switch (client.getVarbitValue(VarbitID.IRONMAN)) {
             case 4: // GIM
             case 5: // HCGIM
             case 6: // UGIM
@@ -435,7 +436,7 @@ public class SmartChatInputColorPlugin extends Plugin {
     @Subscribe
     public void onVarbitChanged(VarbitChanged varbitChanged) {
         // Check if the setting for transparent chat box changed
-        if (varbitChanged.getVarbitId() == Varbits.TRANSPARENT_CHATBOX) {
+        if (varbitChanged.getVarbitId() == VarbitID.CHATBOX_TRANSPARENCY) {
             populateChatChannelColorMap();
             return;
         }
@@ -457,7 +458,7 @@ public class SmartChatInputColorPlugin extends Plugin {
      */
     @Subscribe
     public void onVarClientIntChanged(VarClientIntChanged varClientIntChanged) {
-        if (varClientIntChanged.getIndex() == OPEN_CHAT_PANEL) {
+        if (varClientIntChanged.getIndex() == VarClientInt.OPEN_CHAT_PANEL) {
             setOpenChatPanel();
         }
     }

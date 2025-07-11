@@ -6,8 +6,8 @@ import com.google.inject.testing.fieldbinder.BoundFieldModule;
 import net.runelite.api.Client;
 import net.runelite.api.FriendsChatManager;
 import net.runelite.api.GameState;
-import net.runelite.api.Varbits;
 import net.runelite.api.events.GameTick;
+import net.runelite.api.gameval.VarbitID;
 import net.runelite.client.RuneLite;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.externalplugins.ExternalPluginManager;
@@ -58,7 +58,7 @@ public class SmartChatInputColorPluginTest {
         // Mock the client
 
         // Currently opened chat panel
-        when(client.getVarcIntValue(SmartChatInputColorPlugin.OPEN_CHAT_PANEL))
+        when(client.getVarcIntValue(VarClientInt.OPEN_CHAT_PANEL))
             .thenReturn(state.getOpenChatPanel().getVarClientIntValue());
 
         // In a friends chat or not?
@@ -66,11 +66,11 @@ public class SmartChatInputColorPluginTest {
             .thenReturn(state.isInFriendsChat() ? mock(FriendsChatManager.class) : null);
 
         // Current chat mode, ordinals are the same as the var client int value
-        when(client.getVarcIntValue(SmartChatInputColorPlugin.CHAT_MODE))
+        when(client.getVarcIntValue(VarClientInt.ACTIVE_CHAT_MODE))
             .thenReturn(state.getChatMode().ordinal());
 
         // Group Ironman account
-        when(client.getVarbitValue(Varbits.ACCOUNT_TYPE)).thenReturn(state.isGroupIronman() ? 4 : 0);
+        when(client.getVarbitValue(VarbitID.IRONMAN)).thenReturn(state.isGroupIronman() ? 4 : 0);
 
         // Always logged in while testing
         when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
@@ -82,7 +82,7 @@ public class SmartChatInputColorPluginTest {
         // Using a transparent chatbox, doesn't matter for current testing
         // since we only test the channel output, not the actual color
         when(client.isResized()).thenReturn(true);
-        when(client.getVarbitValue(Varbits.TRANSPARENT_CHATBOX)).thenReturn(1);
+        when(client.getVarbitValue(VarbitID.CHATBOX_TRANSPARENCY)).thenReturn(1);
 
 
         // Mock the plugin manager
@@ -518,6 +518,19 @@ public class SmartChatInputColorPluginTest {
         assertAllPrefixes("g", ChatChannel.GIM);
     }
     //endregion
+
+    @Test
+    public void testClanTabInFriendsChatMode() {
+        setupState(new ClientState(
+            false,
+            false,
+            SlashSwapperMode.OFF,
+            ChatPanel.CLAN,
+            ChatChannel.FRIEND
+        ));
+
+        assertSlash(0, ChatChannel.CLAN);
+    }
 
     public static void main(String[] args) throws Exception {
         @SuppressWarnings("unchecked")

@@ -3,8 +3,8 @@ package com.smartchatinputcolor;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import net.runelite.api.VarPlayer;
 import net.runelite.api.annotations.Varp;
+import net.runelite.api.gameval.VarPlayerID;
 import net.runelite.client.ui.JagexColors;
 
 import javax.annotation.Nullable;
@@ -18,8 +18,8 @@ import java.util.regex.Pattern;
 enum ChatChannel {
     PUBLIC(
         "PublicChat",
-        VarPlayer.SETTINGS_TRANSPARENT_CHAT_PUBLIC,
-        VarPlayer.SETTINGS_OPAQUE_CHAT_PUBLIC,
+        VarPlayerID.OPTION_CHAT_COLOUR_PUBLIC_TRANSPARENT,
+        VarPlayerID.OPTION_CHAT_COLOUR_PUBLIC_OPAQUE,
         JagexColors.CHAT_TYPED_TEXT_TRANSPARENT_BACKGROUND,
         JagexColors.CHAT_TYPED_TEXT_OPAQUE_BACKGROUND,
         Pattern.compile("^/(@p|p ).*"),
@@ -27,8 +27,8 @@ enum ChatChannel {
     ),
     FRIEND(
         "ClanChatMessage",
-        VarPlayer.SETTINGS_TRANSPARENT_CHAT_FRIEND,
-        VarPlayer.SETTINGS_OPAQUE_CHAT_FRIEND,
+        VarPlayerID.OPTION_CHAT_COLOUR_FRIENDSCHAT_TRANSPARENT,
+        VarPlayerID.OPTION_CHAT_COLOUR_FRIENDSCHAT_OPAQUE,
         JagexColors.CHAT_FC_TEXT_TRANSPARENT_BACKGROUND,
         JagexColors.CHAT_FC_TEXT_OPAQUE_BACKGROUND,
         Pattern.compile("^/(@?f).*"),
@@ -36,8 +36,8 @@ enum ChatChannel {
     ),
     CLAN(
         "ClanMessage",
-        VarPlayer.SETTINGS_TRANSPARENT_CHAT_CLAN,
-        VarPlayer.SETTINGS_OPAQUE_CHAT_CLAN,
+        VarPlayerID.OPTION_CHAT_COLOUR_CLANCHAT_TRANSPARENT,
+        VarPlayerID.OPTION_CHAT_COLOUR_CLANCHAT_OPAQUE,
         DefaultColors.CLAN_AND_GIM,
         DefaultColors.CLAN_AND_GIM,
         Pattern.compile("^/(@c|c ).*"),
@@ -45,8 +45,8 @@ enum ChatChannel {
     ),
     GUEST(
         "ClanGuestMessage",
-        VarPlayer.SETTINGS_TRANSPARENT_CHAT_GUEST_CLAN,
-        VarPlayer.SETTINGS_OPAQUE_CHAT_GUEST_CLAN,
+        VarPlayerID.OPTION_CHAT_COLOUR_GUESTCLAN_TRANSPARENT,
+        VarPlayerID.OPTION_CHAT_COLOUR_GUESTCLAN_OPAQUE,
         DefaultColors.GUEST_CLAN_TRANSPARENT,
         DefaultColors.GUEST_CLAN_OPAQUE,
         Pattern.compile("^/(@gc|gc ).*"),
@@ -54,8 +54,8 @@ enum ChatChannel {
     ),
     GIM(
         null,
-        VarPlayer.SETTINGS_TRANSPARENT_CHAT_IRON_GROUP_CHAT,
-        VarPlayer.SETTINGS_OPAQUE_CHAT_IRON_GROUP_CHAT,
+        VarPlayerID.OPTION_CHAT_COLOUR_GIMCHAT_TRANSPARENT,
+        VarPlayerID.OPTION_CHAT_COLOUR_GIMCHAT_OPAQUE,
         DefaultColors.CLAN_AND_GIM,
         DefaultColors.CLAN_AND_GIM,
         Pattern.compile("^/(@g[^c]|g ).*"),
