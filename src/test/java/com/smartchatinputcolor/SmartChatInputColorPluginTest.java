@@ -532,6 +532,20 @@ public class SmartChatInputColorPluginTest {
         assertSlash(0, ChatChannel.CLAN);
     }
 
+    @Test
+    public void testLeaveFriendChatAfterSettingFriendChatMode() {
+        setupState(new ClientState(
+            false,
+            false,
+            SlashSwapperMode.OFF,
+            ChatPanel.ALL,
+            ChatChannel.FRIEND
+        ));
+
+        // This message does not go anywhere but the plugin will pretend it goes to public chat to give it a color
+        assertSlash(0, ChatChannel.PUBLIC);
+    }
+
     public static void main(String[] args) throws Exception {
         @SuppressWarnings("unchecked")
         var plugins = (Class<? extends Plugin>[]) new Class[]{SmartChatInputColorPlugin.class};

@@ -129,6 +129,13 @@ public class SmartChatInputColorPlugin extends Plugin {
         // If it didn't match a prefix, check if in a certain chat mode
         int activeChatMode = client.getVarcIntValue(VarClientInt.ACTIVE_CHAT_MODE);
         ChatChannel chatModeChannel = ChatChannel.fromChatModeVarClientInt(activeChatMode);
+        if (chatModeChannel == ChatChannel.FRIEND && friendsChatChannel == ChatChannel.PUBLIC) {
+            // It's possible to set chat mode to friends and then leave the channel.
+            // Messages sent in this mode go nowhere, but we have to pick a color, so we default to public.
+            // TODO: Add a separate channel / color for messages that don't go anywhere?
+            return ChatChannel.PUBLIC;
+        }
+        // If a chat mode is active, return it
         if (chatModeChannel != null) {
             return chatModeChannel;
         }
