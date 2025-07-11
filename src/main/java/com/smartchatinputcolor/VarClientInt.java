@@ -2,7 +2,6 @@ package com.smartchatinputcolor;
 
 import net.runelite.api.annotations.VarCInt;
 
-@SuppressWarnings("MagicConstant")
 public class VarClientInt {
 
     /**
