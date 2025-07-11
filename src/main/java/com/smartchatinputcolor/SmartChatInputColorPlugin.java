@@ -1,7 +1,6 @@
 package com.smartchatinputcolor;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.inject.Provides;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
@@ -37,9 +36,6 @@ public class SmartChatInputColorPlugin extends Plugin {
     private Client client;
 
     @Inject
-    private SmartChatInputColorPluginConfig config;
-
-    @Inject
     private ConfigManager configManager;
 
     @Inject
@@ -55,8 +51,6 @@ public class SmartChatInputColorPlugin extends Plugin {
     private boolean hoppingWorlds;
 
     private boolean shouldInitialize;
-
-    private boolean slashSwapperBug;
 
     private final Map<ChatChannel, Color> channelColorMap = new HashMap<>();
 
@@ -75,11 +69,6 @@ public class SmartChatInputColorPlugin extends Plugin {
         selectedChatPanel = null;
         friendsChatChannel = null;
         channelColorMap.clear();
-    }
-
-    @Provides
-    SmartChatInputColorPluginConfig provideConfig(ConfigManager configManager) {
-        return configManager.getConfig(SmartChatInputColorPluginConfig.class);
     }
 
     /**
@@ -159,14 +148,7 @@ public class SmartChatInputColorPlugin extends Plugin {
         }
 
         // Check the slash prefix if there is no regex match
-        ChatChannel channel = ChatChannel.fromSlashPrefix(text);
-
-        // If Slash Swapper bug is active and the result is guest chat (///) or GIM chat (////), return friend instead
-        if (slashSwapperBug && (channel == ChatChannel.GUEST || channel == ChatChannel.GIM && !isGroupIronman())) {
-            channel = ChatChannel.FRIEND;
-        }
-
-        return getResultingChannel(channel, text);
+        return getResultingChannel(ChatChannel.fromSlashPrefix(text), text);
     }
 
     /**
@@ -330,14 +312,11 @@ public class SmartChatInputColorPlugin extends Plugin {
             return;
         }
 
-        slashSwapperBug = false;
         ChatChannel.useDefaultSlashPrefixes();
     }
 
     private void useSlashSwapperPrefixes() {
-        boolean guestChatConfig = getSlashSwapperGuestChatConfig();
-        slashSwapperBug = !guestChatConfig && config.slashSwapperBug();
-        ChatChannel.useSlashSwapperPrefixes(guestChatConfig);
+        ChatChannel.useSlashSwapperPrefixes(getSlashSwapperGuestChatConfig());
     }
 
     /**
@@ -398,7 +377,7 @@ public class SmartChatInputColorPlugin extends Plugin {
     @Subscribe
     public void onConfigChanged(ConfigChanged configChanged) {
         String configGroup = configChanged.getGroup();
-        if (configGroup.equals(SmartChatInputColorPluginConfig.GROUP) || configGroup.equals("slashswapper")) {
+        if (configGroup.equals("slashswapper")) {
             clientThread.invoke(() -> {
                 configureSlashPrefixes();
                 recolorChatTypedText();
@@ -428,7 +407,6 @@ public class SmartChatInputColorPlugin extends Plugin {
         if (pluginManager.isPluginEnabled(plugin)) {
             useSlashSwapperPrefixes();
         } else {
-            slashSwapperBug = false;
             ChatChannel.useDefaultSlashPrefixes();
         }
 

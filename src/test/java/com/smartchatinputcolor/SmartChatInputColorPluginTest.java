@@ -35,10 +35,6 @@ public class SmartChatInputColorPluginTest {
 
     @Mock
     @Bind
-    private SmartChatInputColorPluginConfig smartChatInputColorPluginConfig;
-
-    @Mock
-    @Bind
     private Client client;
 
     @Mock
@@ -104,14 +100,6 @@ public class SmartChatInputColorPluginTest {
         // Runelite chat color config
         when(configManager.getConfiguration(eq("textrecolor"), anyString(), eq(Color.class)))
             .thenReturn(mock(Color.class));
-
-
-        // Mock plugin config
-
-        // Slash swapper bug handling
-        when(smartChatInputColorPluginConfig.slashSwapperBug())
-            .thenReturn(state.getSlashSwapperMode() == SlashSwapperMode.ON_BUG_HANDLING);
-
 
         // Initialize the plugin
 
@@ -187,7 +175,7 @@ public class SmartChatInputColorPluginTest {
         setupState(new ClientState(
             false,
             false,
-            SlashSwapperMode.ON_BUG_HANDLING,
+            SlashSwapperMode.ON,
             ChatPanel.ALL,
             ChatChannel.PUBLIC
         ));
@@ -203,12 +191,10 @@ public class SmartChatInputColorPluginTest {
         assertSlash(2, ChatChannel.PUBLIC);
         assertAllPrefixes("c", ChatChannel.CLAN);
 
-        // Slash swapper bug sends /// to friends chat, which goes to public without friends chat
-        assertSlash(3, ChatChannel.PUBLIC);
+        assertSlash(3, ChatChannel.GUEST);
         assertAllPrefixes("gc", ChatChannel.GUEST);
 
-        // Slash swapper makes //// go to friends chat on a non-GIM account, which goes to public without friends chat
-        assertSlash(4, ChatChannel.PUBLIC);
+        assertSlash(4, ChatChannel.GUEST);
         // /g goes to FC on a non-GIM, but Slash swapper makes it go to clan chat
         assertPrefix("g", ChatChannel.CLAN);
         // For some reason, /@g goes to clan chat when not on a GIM account
@@ -285,7 +271,7 @@ public class SmartChatInputColorPluginTest {
         setupState(new ClientState(
             false,
             true,
-            SlashSwapperMode.ON_BUG_HANDLING,
+            SlashSwapperMode.ON,
             ChatPanel.ALL,
             ChatChannel.PUBLIC
         ));
@@ -301,12 +287,10 @@ public class SmartChatInputColorPluginTest {
         assertSlash(2, ChatChannel.FRIEND);
         assertAllPrefixes("c", ChatChannel.CLAN);
 
-        // Slash swapper bug sends /// to friends chat
-        assertSlash(3, ChatChannel.FRIEND);
+        assertSlash(3, ChatChannel.GUEST);
         assertAllPrefixes("gc", ChatChannel.GUEST);
 
-        // Slash swapper makes //// go to friends chat on a non-GIM account
-        assertSlash(4, ChatChannel.FRIEND);
+        assertSlash(4, ChatChannel.GUEST);
         // /g goes to FC on a non-GIM, but Slash swapper makes it go to clan chat
         assertPrefix("g", ChatChannel.CLAN);
         // For some reason, /@g goes to clan chat when not on a GIM account
@@ -379,7 +363,7 @@ public class SmartChatInputColorPluginTest {
         setupState(new ClientState(
             true,
             false,
-            SlashSwapperMode.ON_BUG_HANDLING,
+            SlashSwapperMode.ON,
             ChatPanel.ALL,
             ChatChannel.PUBLIC
         ));
@@ -395,8 +379,7 @@ public class SmartChatInputColorPluginTest {
         assertSlash(2, ChatChannel.PUBLIC);
         assertAllPrefixes("c", ChatChannel.CLAN);
 
-        // Slash swapper bug sends /// to friends chat, which goes to public when not in a friends chat
-        assertSlash(3, ChatChannel.PUBLIC);
+        assertSlash(3, ChatChannel.GUEST);
         assertAllPrefixes("gc", ChatChannel.GUEST);
 
         assertSlash(4, ChatChannel.GIM);
@@ -465,7 +448,7 @@ public class SmartChatInputColorPluginTest {
         setupState(new ClientState(
             true,
             true,
-            SlashSwapperMode.ON_BUG_HANDLING,
+            SlashSwapperMode.ON,
             ChatPanel.ALL,
             ChatChannel.PUBLIC
         ));
@@ -481,8 +464,7 @@ public class SmartChatInputColorPluginTest {
         assertSlash(2, ChatChannel.FRIEND);
         assertAllPrefixes("c", ChatChannel.CLAN);
 
-        // Slash swapper bug sends /// to friends chat
-        assertSlash(3, ChatChannel.FRIEND);
+        assertSlash(3, ChatChannel.GUEST);
         assertAllPrefixes("gc", ChatChannel.GUEST);
 
         assertSlash(4, ChatChannel.GIM);
