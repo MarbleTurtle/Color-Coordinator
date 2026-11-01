@@ -449,13 +449,13 @@ public class SmartChatInputColorPlugin extends Plugin {
     }
 
     /**
-     * Update state when client joins or leaves a friends chat and recolor the typed text
+     * Update state when client joins, leaves, or resyncs a friends chat and recolor the typed text
      *
-     * @param friendsChatChanged FriendsChat changed event object
+     * @param friendsChatSync FriendsChat sync event object
      */
     @Subscribe
-    public void onFriendsChatChanged(FriendsChatChanged friendsChatChanged) {
-        setFriendsChatChannel(friendsChatChanged.isJoined());
+    public void onFriendsChatSync(FriendsChatSync friendsChatSync) {
+        setFriendsChatChannel(friendsChatSync.isSync());
         recolorChatTypedText();
     }
 }
